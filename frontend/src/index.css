@@ -1,0 +1,47 @@
+:root {
+  --bs-primary: #3B82F6;
+  --bs-success: #22C55E;
+  --bs-warning: #F59E0B;
+  --bs-danger: #EF4444;
+  --bs-info: #38BDF8;
+  --bs-body-bg: #0F172A;
+  --bs-body-color: #e2e8f0;
+  --bs-font-sans-serif: 'Inter', sans-serif;
+}
+
+body {
+  background-color: var(--bs-body-bg);
+  color: var(--bs-body-color);
+  font-family: var(--bs-font-sans-serif);
+  -webkit-font-smoothing: antialiased;
+  -moz-osx-font-smoothing: grayscale;
+}
+
+.glass {
+  background-color: rgba(255, 255, 255, 0.05) !important;
+  backdrop-filter: blur(20px);
+  border: 1px solid rgba(255, 255, 255, 0.1) !important;
+  box-shadow: 0 8px 32px rgba(0, 0, 0, 0.25) !important;
+  border-radius: 1rem !important;
+}
+
+.text-primary-custom { color: #3B82F6 !important; }
+.bg-primary-custom { background-color: #3B82F6 !important; }
+.bg-primary-custom-hover:hover { background-color: #1D4ED8 !important; }
+.bg-primary-transparent { background-color: rgba(59, 130, 246, 0.2) !important; }
+.bg-primary-transparent:hover { background-color: rgba(59, 130, 246, 0.3) !important; }
+.bg-dark-800 { background-color: #1E293B !important; }
+.border-slate-700 { border-color: #334155 !important; }
+.text-slate-200 { color: #e2e8f0 !important; }
+.text-slate-300 { color: #cbd5e1 !important; }
+.text-slate-400 { color: #94a3b8 !important; }
+.border-slate-600 { border-color: #475569 !important; }
+.hover-text-white:hover { color: #fff !important; }
+.hover-bg-slate-800:hover { background-color: #1E293B !important; }
+.hover-bg-white-5:hover { background-color: rgba(255,255,255,0.05) !important; }
+
+/* Remove default bootstrap card borders if needed, handled by .glass */
+.card {
+  --bs-card-border-width: 0;
+  --bs-card-bg: transparent;
+}
