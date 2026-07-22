@@ -1,18 +1,14 @@
 import React, { useState, useContext } from 'react';
-import { Form, Button, Container, Row, Col, Card, Alert } from 'react-bootstrap';
 import { Link, useNavigate } from 'react-router-dom';
 import { AuthContext } from '../context/AuthContext';
 import { motion } from 'framer-motion';
+import { Shield, Eye, EyeOff, ArrowRight, Loader2 } from 'lucide-react';
 
 const Register = () => {
   const [formData, setFormData] = useState({
-    firstName: '',
-    lastName: '',
-    username: '',
-    email: '',
-    password: '',
-    confirmPassword: ''
+    firstName: '', lastName: '', username: '', email: '', password: '', confirmPassword: ''
   });
+  const [showPassword, setShowPassword] = useState(false);
   const [error, setError] = useState('');
   const [loading, setLoading] = useState(false);
   
@@ -25,7 +21,6 @@ const Register = () => {
   };
 
   const validatePassword = (password) => {
-    // Requires at least one lowercase, one uppercase, one number, one special character, and minimum 8 characters
     const regex = /^(?=.*[a-z])(?=.*[A-Z])(?=.*\d)(?=.*[^A-Za-z0-9]).{8,}$/;
     return regex.test(password);
   };
@@ -33,134 +28,140 @@ const Register = () => {
   const handleSubmit = async (e) => {
     e.preventDefault();
     setError('');
-
-    if (formData.password !== formData.confirmPassword) {
-      return setError('Passwords do not match');
-    }
-
-    if (!validatePassword(formData.password)) {
-      return setError('Password must be at least 8 characters long, contain an uppercase letter, a lowercase letter, a number, and a special character.');
-    }
-
+    if (formData.password !== formData.confirmPassword) return setError('Passwords do not match');
+    if (!validatePassword(formData.password)) return setError('Password must be 8+ chars with uppercase, lowercase, number, and special character.');
     setLoading(true);
-
     try {
       await register({
-        email: formData.email,
-        username: formData.username,
-        password: formData.password,
-        first_name: formData.firstName,
-        last_name: formData.lastName
+        email: formData.email, username: formData.username, password: formData.password,
+        first_name: formData.firstName, last_name: formData.lastName
       });
       navigate('/dashboard');
-    } catch (err) {
-      setError(err);
-    } finally {
-      setLoading(false);
-    }
+    } catch (err) { setError(err); } finally { setLoading(false); }
   };
 
+  const InputField = ({ label, name, type = 'text', required = false, placeholder, autoComplete }) => (
+    <div style={{ marginBottom: '1rem' }}>
+      <label className="tl-label">
+        {label} {required && <span style={{ color: 'var(--tl-danger)' }}>*</span>}
+      </label>
+      <input
+        type={type}
+        name={name}
+        className="tl-input"
+        placeholder={placeholder}
+        value={formData[name]}
+        onChange={handleChange}
+        required={required}
+        autoComplete={autoComplete}
+      />
+    </div>
+  );
+
   return (
-    <Container className="d-flex align-items-center justify-content-center py-5">
-      <motion.div initial={{ opacity: 0, y: 20 }} animate={{ opacity: 1, y: 0 }} transition={{ duration: 0.5 }} className="w-100" style={{ maxWidth: '500px' }}>
-        <Card className="shadow-sm border-0 rounded-4 p-4">
-          <Card.Body>
-            <div className="text-center mb-4">
-              <h2 className="fw-bold">Create Account</h2>
-              <p className="text-muted">Join ThreatLens AI today</p>
+    <div className="tl-auth-container">
+      <motion.div 
+        initial={{ opacity: 0, y: 24 }} 
+        animate={{ opacity: 1, y: 0 }} 
+        transition={{ duration: 0.5, ease: 'easeOut' }}
+      >
+        <div className="tl-auth-card tl-auth-card-wide">
+          <div className="tl-auth-logo">
+            <Shield size={22} color="#fff" />
+          </div>
+          <h2 className="tl-auth-title">Create your account</h2>
+          <p className="tl-auth-subtitle">Join ThreatLens AI and start protecting your assets</p>
+
+          {error && (
+            <motion.div
+              initial={{ opacity: 0, y: -8 }}
+              animate={{ opacity: 1, y: 0 }}
+              style={{
+                background: 'rgba(var(--tl-danger-rgb), 0.1)',
+                border: '1px solid rgba(var(--tl-danger-rgb), 0.2)',
+                borderRadius: 'var(--tl-radius-sm)',
+                padding: '0.75rem 1rem', marginBottom: '1.25rem',
+                color: 'var(--tl-danger)', fontSize: '0.8125rem',
+              }}
+            >
+              {error}
+            </motion.div>
+          )}
+
+          <form onSubmit={handleSubmit}>
+            <div className="row g-3">
+              <div className="col-6">
+                <InputField label="First Name" name="firstName" placeholder="John" autoComplete="given-name" />
+              </div>
+              <div className="col-6">
+                <InputField label="Last Name" name="lastName" placeholder="Doe" autoComplete="family-name" />
+              </div>
             </div>
 
-            {error && <Alert variant="danger">{error}</Alert>}
+            <InputField label="Username" name="username" required placeholder="johndoe" autoComplete="username" />
+            <InputField label="Email Address" name="email" type="email" required placeholder="john@company.com" autoComplete="email" />
 
-            <Form onSubmit={handleSubmit}>
-              <Row>
-                <Col md={6}>
-                  <Form.Group className="mb-3" controlId="firstName">
-                    <Form.Label>First Name</Form.Label>
-                    <Form.Control
-                      type="text"
-                      name="firstName"
-                      value={formData.firstName}
-                      onChange={handleChange}
-                      className="rounded-3"
-                    />
-                  </Form.Group>
-                </Col>
-                <Col md={6}>
-                  <Form.Group className="mb-3" controlId="lastName">
-                    <Form.Label>Last Name</Form.Label>
-                    <Form.Control
-                      type="text"
-                      name="lastName"
-                      value={formData.lastName}
-                      onChange={handleChange}
-                      className="rounded-3"
-                    />
-                  </Form.Group>
-                </Col>
-              </Row>
-
-              <Form.Group className="mb-3" controlId="username">
-                <Form.Label>Username <span className="text-danger">*</span></Form.Label>
-                <Form.Control
-                  type="text"
-                  name="username"
-                  required
-                  value={formData.username}
-                  onChange={handleChange}
-                  className="rounded-3"
-                />
-              </Form.Group>
-
-              <Form.Group className="mb-3" controlId="email">
-                <Form.Label>Email Address <span className="text-danger">*</span></Form.Label>
-                <Form.Control
-                  type="email"
-                  name="email"
-                  required
-                  value={formData.email}
-                  onChange={handleChange}
-                  className="rounded-3"
-                />
-              </Form.Group>
-
-              <Form.Group className="mb-3" controlId="password">
-                <Form.Label>Password <span className="text-danger">*</span></Form.Label>
-                <Form.Control
-                  type="password"
+            <div style={{ marginBottom: '1rem' }}>
+              <label className="tl-label">Password <span style={{ color: 'var(--tl-danger)' }}>*</span></label>
+              <div style={{ position: 'relative' }}>
+                <input
+                  type={showPassword ? 'text' : 'password'}
                   name="password"
-                  required
+                  className="tl-input"
+                  placeholder="Min 8 characters"
                   value={formData.password}
                   onChange={handleChange}
-                  className="rounded-3"
-                />
-              </Form.Group>
-
-              <Form.Group className="mb-4" controlId="confirmPassword">
-                <Form.Label>Confirm Password <span className="text-danger">*</span></Form.Label>
-                <Form.Control
-                  type="password"
-                  name="confirmPassword"
                   required
-                  value={formData.confirmPassword}
-                  onChange={handleChange}
-                  className="rounded-3"
+                  autoComplete="new-password"
+                  style={{ paddingRight: '2.75rem' }}
                 />
-              </Form.Group>
-
-              <Button variant="primary" type="submit" className="w-100 rounded-3 py-2 fw-semibold" disabled={loading}>
-                {loading ? 'Creating Account...' : 'Sign Up'}
-              </Button>
-            </Form>
-
-            <div className="text-center mt-4">
-              <span className="text-muted">Already have an account? </span>
-              <Link to="/login" className="text-decoration-none fw-semibold">Sign In</Link>
+                <button type="button" onClick={() => setShowPassword(!showPassword)}
+                  style={{
+                    position: 'absolute', right: '0.75rem', top: '50%', transform: 'translateY(-50%)',
+                    background: 'none', border: 'none', color: 'var(--tl-text-faint)', cursor: 'pointer', padding: 0, display: 'flex',
+                  }}
+                >
+                  {showPassword ? <EyeOff size={16} /> : <Eye size={16} />}
+                </button>
+              </div>
             </div>
-          </Card.Body>
-        </Card>
+
+            <div style={{ marginBottom: '1.5rem' }}>
+              <label className="tl-label">Confirm Password <span style={{ color: 'var(--tl-danger)' }}>*</span></label>
+              <input
+                type="password"
+                name="confirmPassword"
+                className="tl-input"
+                placeholder="Re-enter your password"
+                value={formData.confirmPassword}
+                onChange={handleChange}
+                required
+                autoComplete="new-password"
+              />
+            </div>
+
+            <motion.button 
+              type="submit"
+              className="tl-btn tl-btn-primary w-100"
+              disabled={loading}
+              whileTap={{ scale: 0.98 }}
+              style={{ padding: '0.75rem', fontSize: '0.9375rem' }}
+            >
+              {loading ? (
+                <><Loader2 size={18} className="spin" /> Creating account...</>
+              ) : (
+                <>Create Account <ArrowRight size={16} /></>
+              )}
+            </motion.button>
+          </form>
+
+          <div style={{ textAlign: 'center', marginTop: '1.75rem', fontSize: '0.875rem' }}>
+            <span style={{ color: 'var(--tl-text-muted)' }}>Already have an account? </span>
+            <Link to="/login" style={{ color: 'var(--tl-primary-light)', fontWeight: 500 }}>Sign in</Link>
+          </div>
+        </div>
       </motion.div>
-    </Container>
+    </div>
   );
 };
 

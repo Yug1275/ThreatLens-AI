@@ -1,8 +1,8 @@
 import React, { useState } from 'react';
-import { Form, Button, Container, Card, Alert } from 'react-bootstrap';
 import { Link } from 'react-router-dom';
 import api from '../utils/axios';
 import { motion } from 'framer-motion';
+import { Shield, ArrowRight, Loader2, Mail } from 'lucide-react';
 
 const ForgotPassword = () => {
   const [email, setEmail] = useState('');
@@ -12,58 +12,51 @@ const ForgotPassword = () => {
 
   const handleSubmit = async (e) => {
     e.preventDefault();
-    setError('');
-    setMessage('');
-    setLoading(true);
-
+    setError(''); setMessage(''); setLoading(true);
     try {
       const response = await api.post('/api/v1/auth/forgot-password', { email });
       setMessage(response.data.message || 'Password reset link sent to your email.');
     } catch (err) {
       setError(err.response?.data?.detail || 'An error occurred. Please try again.');
-    } finally {
-      setLoading(false);
-    }
+    } finally { setLoading(false); }
   };
 
   return (
-    <Container className="d-flex align-items-center justify-content-center" style={{ minHeight: '80vh' }}>
-      <motion.div initial={{ opacity: 0, y: 20 }} animate={{ opacity: 1, y: 0 }} transition={{ duration: 0.5 }} className="w-100" style={{ maxWidth: '400px' }}>
-        <Card className="shadow-sm border-0 rounded-4 p-4">
-          <Card.Body>
-            <div className="text-center mb-4">
-              <h2 className="fw-bold">Forgot Password</h2>
-              <p className="text-muted">Enter your email to receive a reset link</p>
+    <div className="tl-auth-container">
+      <motion.div initial={{ opacity: 0, y: 24 }} animate={{ opacity: 1, y: 0 }} transition={{ duration: 0.5 }}>
+        <div className="tl-auth-card">
+          <div className="tl-auth-logo"><Shield size={22} color="#fff" /></div>
+          <h2 className="tl-auth-title">Forgot password</h2>
+          <p className="tl-auth-subtitle">Enter your email to receive a reset link</p>
+
+          {error && (
+            <div style={{ background: 'rgba(var(--tl-danger-rgb), 0.1)', border: '1px solid rgba(var(--tl-danger-rgb), 0.2)', borderRadius: 'var(--tl-radius-sm)', padding: '0.75rem 1rem', marginBottom: '1.25rem', color: 'var(--tl-danger)', fontSize: '0.8125rem' }}>
+              {error}
+            </div>
+          )}
+          {message && (
+            <div style={{ background: 'rgba(var(--tl-success-rgb), 0.1)', border: '1px solid rgba(var(--tl-success-rgb), 0.2)', borderRadius: 'var(--tl-radius-sm)', padding: '0.75rem 1rem', marginBottom: '1.25rem', color: 'var(--tl-success)', fontSize: '0.8125rem' }}>
+              {message}
+            </div>
+          )}
+
+          <form onSubmit={handleSubmit}>
+            <div style={{ marginBottom: '1.5rem' }}>
+              <label className="tl-label">Email Address</label>
+              <input type="email" className="tl-input" placeholder="name@company.com" value={email} onChange={(e) => setEmail(e.target.value)} required autoComplete="email" />
             </div>
 
-            {error && <Alert variant="danger">{error}</Alert>}
-            {message && <Alert variant="success">{message}</Alert>}
+            <motion.button type="submit" className="tl-btn tl-btn-primary w-100" disabled={loading} whileTap={{ scale: 0.98 }} style={{ padding: '0.75rem' }}>
+              {loading ? <><Loader2 size={18} className="spin" /> Sending...</> : <>Send Reset Link <ArrowRight size={16} /></>}
+            </motion.button>
+          </form>
 
-            <Form onSubmit={handleSubmit}>
-              <Form.Group className="mb-4" controlId="email">
-                <Form.Label>Email Address</Form.Label>
-                <Form.Control
-                  type="email"
-                  placeholder="Enter your email"
-                  value={email}
-                  onChange={(e) => setEmail(e.target.value)}
-                  required
-                  className="rounded-3 py-2"
-                />
-              </Form.Group>
-
-              <Button variant="primary" type="submit" className="w-100 rounded-3 py-2 fw-semibold" disabled={loading}>
-                {loading ? 'Sending...' : 'Send Reset Link'}
-              </Button>
-            </Form>
-
-            <div className="text-center mt-4">
-              <Link to="/login" className="text-decoration-none fw-semibold">Back to Sign In</Link>
-            </div>
-          </Card.Body>
-        </Card>
+          <div style={{ textAlign: 'center', marginTop: '1.75rem', fontSize: '0.875rem' }}>
+            <Link to="/login" style={{ color: 'var(--tl-primary-light)', fontWeight: 500 }}>← Back to Sign In</Link>
+          </div>
+        </div>
       </motion.div>
-    </Container>
+    </div>
   );
 };
 

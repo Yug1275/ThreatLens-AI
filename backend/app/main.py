@@ -17,7 +17,10 @@ app.add_middleware(
     allow_headers=["*"],
 )
 
+from app.api.v1 import auth, dashboard
+
 app.include_router(auth.router, prefix="/api/v1/auth", tags=["auth"])
+app.include_router(dashboard.router, prefix="/api/v1/dashboard", tags=["dashboard"])
 
 @app.get("/")
 def read_root():
