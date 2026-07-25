@@ -37,6 +37,14 @@ const ThreatGauge = ({ score }) => {
   );
 };
 
+const URL_STEPS = [
+    "Investigation Initialized", "Validating URL Format", "Extracting Domain",
+    "Checking Domain Structure", "WHOIS Lookup", "DNS Record Analysis",
+    "SSL Certificate Inspection", "Redirect Chain Analysis", "IOC Extraction",
+    "Rule-Based Threat Detection", "Threat Score Calculation", 
+    "Generating Investigation Report", "Investigation Completed"
+];
+
 export default function UrlInvestigation() {
   const location = useLocation();
   const [url, setUrl] = useState(location.state?.target || '');
@@ -49,14 +57,6 @@ export default function UrlInvestigation() {
   const [result, setResult] = useState(null);
   const [error, setError] = useState(null);
   const [activeTab, setActiveTab] = useState('overview');
-
-  const URL_STEPS = [
-      "Investigation Initialized", "Validating URL Format", "Extracting Domain",
-      "Checking Domain Structure", "WHOIS Lookup", "DNS Record Analysis",
-      "SSL Certificate Inspection", "Redirect Chain Analysis", "IOC Extraction",
-      "Rule-Based Threat Detection", "Threat Score Calculation", 
-      "Generating Investigation Report", "Investigation Completed"
-  ];
 
   const handleSubmit = async (e) => {
     e.preventDefault();
@@ -121,7 +121,7 @@ export default function UrlInvestigation() {
                 steps={URL_STEPS} 
                 target={url}
                 isBackendComplete={isBackendComplete} 
-                onRevealReport={() => setShowReport(true)} 
+                onRevealReport={() => { setShowReport(true); setIsInvestigating(false); }} 
             />
         </div>
       )}
@@ -130,9 +130,9 @@ export default function UrlInvestigation() {
       {showReport && result && (
         <motion.div initial={{ opacity: 0, y: 20 }} animate={{ opacity: 1, y: 0 }} transition={{ duration: 0.5 }}>
             <div className="d-flex gap-3 mb-4 border-bottom pb-3" style={{ borderColor: 'var(--tl-border)' }}>
-              <button className={`btn btn-link text-decoration-none ${activeTab === 'overview' ? 'text-primary' : 'text-muted'}`} onClick={() => setActiveTab('overview')} style={{ fontWeight: activeTab === 'overview' ? 600 : 400 }}>Overview</button>
-              <button className={`btn btn-link text-decoration-none ${activeTab === 'technical' ? 'text-primary' : 'text-muted'}`} onClick={() => setActiveTab('technical')} style={{ fontWeight: activeTab === 'technical' ? 600 : 400 }}>Technical Details</button>
-              <button className={`btn btn-link text-decoration-none ${activeTab === 'timeline' ? 'text-primary' : 'text-muted'}`} onClick={() => setActiveTab('timeline')} style={{ fontWeight: activeTab === 'timeline' ? 600 : 400 }}>Timeline</button>
+              <button className="btn btn-link text-decoration-none" onClick={() => setActiveTab('overview')} style={{ fontWeight: activeTab === 'overview' ? 600 : 400, color: activeTab === 'overview' ? 'var(--tl-primary-light)' : 'var(--tl-text-secondary)' }}>Overview</button>
+              <button className="btn btn-link text-decoration-none" onClick={() => setActiveTab('technical')} style={{ fontWeight: activeTab === 'technical' ? 600 : 400, color: activeTab === 'technical' ? 'var(--tl-primary-light)' : 'var(--tl-text-secondary)' }}>Technical Details</button>
+              <button className="btn btn-link text-decoration-none" onClick={() => setActiveTab('timeline')} style={{ fontWeight: activeTab === 'timeline' ? 600 : 400, color: activeTab === 'timeline' ? 'var(--tl-primary-light)' : 'var(--tl-text-secondary)' }}>Timeline</button>
             </div>
 
             {activeTab === 'overview' && (
@@ -140,9 +140,9 @@ export default function UrlInvestigation() {
                 <div className="col-12 col-xl-4 d-flex flex-column gap-4">
                   <div className="tl-card p-4 text-center">
                     <h6 style={{ fontWeight: 600, color: 'var(--tl-text-primary)', marginBottom: '1.5rem', textAlign: 'left' }}>Risk Assessment</h6>
-                    <ThreatGauge score={result.threat_score} />
+                    <ThreatGauge score={result?.threat_score || 0} />
                     <div className="mt-4 p-3 rounded" style={{ background: 'var(--tl-bg-surface)', fontSize: '0.8125rem', color: 'var(--tl-text-secondary)', textAlign: 'left', lineHeight: 1.6 }}>
-                      {result.summary}
+                      {result?.summary || 'No summary available.'}
                     </div>
                   </div>
                 </div>
@@ -156,9 +156,9 @@ export default function UrlInvestigation() {
                           <h6 style={{ fontWeight: 600, color: 'var(--tl-text-primary)', margin: 0 }}>Domain Identity</h6>
                         </div>
                         <div className="d-flex flex-column gap-2">
-                          <div className="d-flex justify-content-between"><span style={{ color: 'var(--tl-text-muted)' }}>Registrar</span><span style={{ color: 'var(--tl-text-primary)' }}>{result.domain_info.registrar}</span></div>
-                          <div className="d-flex justify-content-between"><span style={{ color: 'var(--tl-text-muted)' }}>Creation Date</span><span style={{ color: 'var(--tl-text-primary)' }}>{result.domain_info.creation_date}</span></div>
-                          <div className="d-flex justify-content-between"><span style={{ color: 'var(--tl-text-muted)' }}>Age</span><span style={{ color: 'var(--tl-text-primary)' }}>{result.domain_info.domain_age_days} days</span></div>
+                          <div className="d-flex justify-content-between"><span style={{ color: 'var(--tl-text-muted)' }}>Registrar</span><span style={{ color: 'var(--tl-text-primary)' }}>{result?.domain_info?.registrar || 'N/A'}</span></div>
+                          <div className="d-flex justify-content-between"><span style={{ color: 'var(--tl-text-muted)' }}>Creation Date</span><span style={{ color: 'var(--tl-text-primary)' }}>{result?.domain_info?.creation_date || 'N/A'}</span></div>
+                          <div className="d-flex justify-content-between"><span style={{ color: 'var(--tl-text-muted)' }}>Age</span><span style={{ color: 'var(--tl-text-primary)' }}>{result?.domain_info?.domain_age_days || 0} days</span></div>
                         </div>
                       </div>
                     </div>
@@ -170,9 +170,9 @@ export default function UrlInvestigation() {
                         </div>
                         <div className="d-flex flex-column gap-2">
                           <div className="d-flex justify-content-between"><span style={{ color: 'var(--tl-text-muted)' }}>SSL Certificate</span>
-                            {result.ssl_info.valid ? <Badge variant="success">Valid</Badge> : <Badge variant="danger">Invalid</Badge>}
+                            {result?.ssl_info?.valid ? <Badge variant="success">Valid</Badge> : <Badge variant="danger">Invalid</Badge>}
                           </div>
-                          <div className="d-flex justify-content-between"><span style={{ color: 'var(--tl-text-muted)' }}>Issuer</span><span style={{ color: 'var(--tl-text-primary)' }}>{result.ssl_info.issuer}</span></div>
+                          <div className="d-flex justify-content-between"><span style={{ color: 'var(--tl-text-muted)' }}>Issuer</span><span style={{ color: 'var(--tl-text-primary)' }}>{result?.ssl_info?.issuer || 'N/A'}</span></div>
                         </div>
                       </div>
                     </div>
@@ -183,11 +183,11 @@ export default function UrlInvestigation() {
                       <Activity size={18} color="var(--tl-primary-light)" />
                       <h6 style={{ fontWeight: 600, color: 'var(--tl-text-primary)', margin: 0 }}>IOCs Extracted</h6>
                     </div>
-                    {result.iocs && result.iocs.length > 0 ? (
+                    {result?.iocs && result.iocs.length > 0 ? (
                       <div className="d-flex flex-wrap gap-2">
                         {result.iocs.map((ioc, i) => (
                           <Badge key={i} variant="outline" className="d-flex align-items-center gap-2">
-                            <span style={{ color: 'var(--tl-primary-light)' }}>{ioc.type}:</span> {ioc.value}
+                            <span style={{ color: 'var(--tl-primary-light)' }}>{ioc?.type}:</span> {ioc?.value}
                           </Badge>
                         ))}
                       </div>
@@ -202,11 +202,13 @@ export default function UrlInvestigation() {
             {activeTab === 'technical' && (
               <div className="tl-card p-4">
                 <h6 style={{ fontWeight: 600, color: 'var(--tl-text-primary)', marginBottom: '1rem' }}>Redirect Chain</h6>
-                {result.redirect_chain.length > 0 ? (
+                {result?.redirect_chain && result.redirect_chain.length > 0 ? (
                   <div className="d-flex flex-column gap-2">
-                    {result.redirect_chain.map((url, i) => (
+                    {result.redirect_chain.map((redirect, i) => (
                       <div key={i} className="d-flex align-items-center gap-2" style={{ color: 'var(--tl-text-secondary)', fontSize: '0.875rem' }}>
-                        <span>{i + 1}.</span> <span style={{ fontFamily: 'var(--tl-font-mono)' }}>{url}</span>
+                        <span>{i + 1}.</span> 
+                        <Badge variant={redirect.status_code === 200 ? 'success' : 'warning'} className="ms-2 me-2">{redirect.status_code}</Badge>
+                        <span style={{ fontFamily: 'var(--tl-font-mono)' }}>{redirect.url}</span>
                       </div>
                     ))}
                   </div>
@@ -220,10 +222,13 @@ export default function UrlInvestigation() {
               <div className="tl-card p-4">
                 <h6 style={{ fontWeight: 600, color: 'var(--tl-text-primary)', marginBottom: '1rem' }}>Investigation Log</h6>
                 <div className="d-flex flex-column gap-3">
-                  {result.timeline.map((event, i) => (
+                  {result?.timeline && result.timeline.map((item, i) => (
                     <div key={i} className="d-flex align-items-center gap-3">
                       <div style={{ width: 10, height: 10, borderRadius: '50%', background: 'var(--tl-primary-light)' }}></div>
-                      <span style={{ color: 'var(--tl-text-secondary)', fontSize: '0.875rem' }}>{event}</span>
+                      <div className="d-flex flex-column">
+                        <span style={{ color: 'var(--tl-text-secondary)', fontSize: '0.875rem' }}>{item.event}</span>
+                        <span style={{ color: 'var(--tl-text-faint)', fontSize: '0.75rem' }}>{item.time}</span>
+                      </div>
                     </div>
                   ))}
                 </div>

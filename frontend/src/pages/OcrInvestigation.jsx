@@ -219,7 +219,7 @@ export default function OcrInvestigation() {
                     steps={OCR_STEPS} 
                     target={file?.name}
                     isBackendComplete={isBackendComplete} 
-                    onRevealReport={() => setShowReport(true)} 
+                    onRevealReport={() => { setShowReport(true); setIsInvestigating(false); }} 
                 />
             </div>
         )}

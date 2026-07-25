@@ -37,6 +37,13 @@ const ThreatGauge = ({ score }) => {
   );
 };
 
+const QR_STEPS = [
+    "QR Uploaded", "Validating QR Image", "Decoding QR Code",
+    "Detecting QR Type", "Extracting Embedded Content", "Validating Extracted Content",
+    "Launching Appropriate Investigation", "Threat Analysis", 
+    "Threat Score Calculation", "Generating Investigation Report", "Investigation Completed"
+];
+
 export default function QrInvestigation() {
   const [file, setFile] = useState(null);
   const [previewUrl, setPreviewUrl] = useState(null);
@@ -51,13 +58,6 @@ export default function QrInvestigation() {
   const [error, setError] = useState(null);
   const fileInputRef = useRef(null);
   const navigate = useNavigate();
-
-  const QR_STEPS = [
-      "QR Uploaded", "Validating QR Image", "Decoding QR Code",
-      "Detecting QR Type", "Extracting Embedded Content", "Validating Extracted Content",
-      "Launching Appropriate Investigation", "Threat Analysis", 
-      "Threat Score Calculation", "Generating Investigation Report", "Investigation Completed"
-  ];
 
   const handleDrag = (e) => {
     e.preventDefault();
@@ -225,7 +225,7 @@ export default function QrInvestigation() {
                     steps={QR_STEPS} 
                     target={file?.name}
                     isBackendComplete={isBackendComplete} 
-                    onRevealReport={() => setShowReport(true)} 
+                    onRevealReport={() => { setShowReport(true); setIsInvestigating(false); }} 
                 />
             </div>
         )}
@@ -241,15 +241,15 @@ export default function QrInvestigation() {
                         <div className="col-12 col-xl-4 d-flex flex-column gap-4">
                             <div className="tl-card p-4 text-center">
                                 <h6 style={{ fontWeight: 600, color: 'var(--tl-text-primary)', marginBottom: '1.5rem', textAlign: 'left' }}>Risk Assessment</h6>
-                                <ThreatGauge score={result.threat_score} />
+                                <ThreatGauge score={result?.threat_score || 0} />
                                 
                                 <div className="mt-4 p-3 rounded d-flex align-items-center justify-content-center gap-3" style={{ background: 'var(--tl-bg-surface)', border: '1px solid var(--tl-border)' }}>
                                     <div style={{ padding: 10, background: 'rgba(var(--tl-primary-rgb), 0.1)', borderRadius: 'var(--tl-radius-md)' }}>
-                                        {getQrIcon(result.qr_type)}
+                                        {getQrIcon(result?.qr_type)}
                                     </div>
                                     <div className="text-start">
                                         <div style={{ fontSize: '0.75rem', color: 'var(--tl-text-faint)', textTransform: 'uppercase' }}>QR Type Detected</div>
-                                        <div style={{ fontSize: '1.125rem', color: 'var(--tl-text-primary)', fontWeight: 600 }}>{result.qr_type}</div>
+                                        <div style={{ fontSize: '1.125rem', color: 'var(--tl-text-primary)', fontWeight: 600 }}>{result?.qr_type || 'Unknown'}</div>
                                     </div>
                                 </div>
                             </div>
@@ -259,10 +259,10 @@ export default function QrInvestigation() {
                                 <div className="tl-card p-4">
                                     <h6 style={{ fontWeight: 600, color: 'var(--tl-text-primary)', marginBottom: '1rem' }}>Further Investigation</h6>
                                     <p style={{ fontSize: '0.8125rem', color: 'var(--tl-text-muted)', marginBottom: '1rem' }}>
-                                        This QR code contains a <strong>{result.qr_type}</strong>. You can run a deep analysis on the extracted target using the dedicated investigation module.
+                                        This QR code contains a <strong>{result?.qr_type}</strong>. You can run a deep analysis on the extracted target using the dedicated investigation module.
                                     </p>
                                     <Button className="w-100" onClick={handleDeepInvestigate}>
-                                        Open in {result.qr_type} Investigation
+                                        Open in {result?.qr_type} Investigation
                                     </Button>
                                 </div>
                             )}
@@ -280,22 +280,22 @@ export default function QrInvestigation() {
                                 
                                 <div className="p-4 rounded" style={{ background: '#020617', border: '1px solid var(--tl-border)' }}>
                                     <div style={{ fontFamily: 'var(--tl-font-mono)', fontSize: '0.875rem', color: 'var(--tl-primary-light)', whiteSpace: 'pre-wrap', wordBreak: 'break-all' }}>
-                                        {result.extracted_data}
+                                        {result?.extracted_data || 'No data extracted'}
                                     </div>
                                 </div>
                                 
                                 <div className="mt-4 p-3 rounded" style={{ background: 'rgba(var(--tl-primary-rgb), 0.1)', fontSize: '0.8125rem', color: 'var(--tl-primary-light)', textAlign: 'left', lineHeight: 1.6, border: '1px solid rgba(var(--tl-primary-rgb), 0.2)' }}>
-                                    {result.summary}
+                                    {result?.summary || 'No summary available.'}
                                 </div>
                             </div>
                             
                             {/* Threat Indicators */}
                             <div className="tl-card p-4">
                                 <div className="d-flex align-items-center gap-2 mb-3">
-                                    <ShieldAlert size={18} color={result.indicators.length > 0 ? "var(--tl-danger)" : "var(--tl-success)"} />
+                                    <ShieldAlert size={18} color={result?.indicators?.length > 0 ? "var(--tl-danger)" : "var(--tl-success)"} />
                                     <h6 style={{ fontWeight: 600, color: 'var(--tl-text-primary)', margin: 0 }}>Threat Indicators</h6>
                                 </div>
-                                {result.indicators.length > 0 ? (
+                                {result?.indicators && result.indicators.length > 0 ? (
                                     <div className="d-flex flex-column gap-2">
                                         {result.indicators.map((ind, i) => (
                                             <div key={i} className="d-flex align-items-center gap-2 p-2 rounded" style={{ background: 'rgba(var(--tl-danger-rgb), 0.1)', color: 'var(--tl-danger)', fontSize: '0.8125rem' }}>

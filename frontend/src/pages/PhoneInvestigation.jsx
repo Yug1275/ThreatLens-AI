@@ -39,6 +39,13 @@ const ThreatGauge = ({ score }) => {
   );
 };
 
+const PHONE_STEPS = [
+    "Phone Submitted", "Validating Phone Number", "Normalizing Number",
+    "Country Detection", "Region Detection", "Carrier Lookup",
+    "Number Classification", "Pattern Analysis", "Threat Rule Evaluation",
+    "Threat Score Calculation", "Generating Investigation Report", "Investigation Completed"
+];
+
 export default function PhoneInvestigation() {
   const location = useLocation();
   const [phoneNumber, setPhoneNumber] = useState(location.state?.target || '');
@@ -50,13 +57,6 @@ export default function PhoneInvestigation() {
 
   const [result, setResult] = useState(null);
   const [error, setError] = useState(null);
-
-  const PHONE_STEPS = [
-      "Phone Submitted", "Validating Phone Number", "Normalizing Number",
-      "Country Detection", "Region Detection", "Carrier Lookup",
-      "Number Classification", "Pattern Analysis", "Threat Rule Evaluation",
-      "Threat Score Calculation", "Generating Investigation Report", "Investigation Completed"
-  ];
 
   const handleSubmit = async (e) => {
     e.preventDefault();
@@ -127,7 +127,7 @@ export default function PhoneInvestigation() {
                     steps={PHONE_STEPS} 
                     target={phoneNumber}
                     isBackendComplete={isBackendComplete} 
-                    onRevealReport={() => setShowReport(true)} 
+                    onRevealReport={() => { setShowReport(true); setIsInvestigating(false); }} 
                 />
             </div>
         )}

@@ -37,6 +37,24 @@ const ThreatGauge = ({ score }) => {
   );
 };
 
+const BASE_EMAIL_STEPS = [
+    "Email Submitted", "Parsing Email", "Extracting Sender",
+    "Extracting Subject", "Extracting Body", "Extracting URLs",
+    "Extracting Email Addresses", "Extracting Phone Numbers", "Typosquatting Detection",
+    "Brand Impersonation Detection", "Keyword Analysis", "Credential Request Detection",
+    "Threat Rule Evaluation", "Threat Score Calculation", 
+    "Generating Investigation Report", "Investigation Completed"
+];
+
+const RAW_EMAIL_STEPS = [
+    "Email Submitted", "Parsing Email", "Header Analysis", "SPF Validation", "DKIM Validation", "DMARC Validation", "Originating IP Analysis", "Extracting Sender",
+    "Extracting Subject", "Extracting Body", "Extracting URLs",
+    "Extracting Email Addresses", "Extracting Phone Numbers", "Typosquatting Detection",
+    "Brand Impersonation Detection", "Keyword Analysis", "Credential Request Detection",
+    "Threat Rule Evaluation", "Threat Score Calculation", 
+    "Generating Investigation Report", "Investigation Completed"
+];
+
 export default function EmailInvestigation() {
   const location = useLocation();
   const navigate = useNavigate();
@@ -53,24 +71,6 @@ export default function EmailInvestigation() {
 
   const [result, setResult] = useState(null);
   const [error, setError] = useState(null);
-
-  const BASE_EMAIL_STEPS = [
-      "Email Submitted", "Parsing Email", "Extracting Sender",
-      "Extracting Subject", "Extracting Body", "Extracting URLs",
-      "Extracting Email Addresses", "Extracting Phone Numbers", "Typosquatting Detection",
-      "Brand Impersonation Detection", "Keyword Analysis", "Credential Request Detection",
-      "Threat Rule Evaluation", "Threat Score Calculation", 
-      "Generating Investigation Report", "Investigation Completed"
-  ];
-  
-  const RAW_EMAIL_STEPS = [
-      "Email Submitted", "Parsing Email", "Header Analysis", "SPF Validation", "DKIM Validation", "DMARC Validation", "Originating IP Analysis", "Extracting Sender",
-      "Extracting Subject", "Extracting Body", "Extracting URLs",
-      "Extracting Email Addresses", "Extracting Phone Numbers", "Typosquatting Detection",
-      "Brand Impersonation Detection", "Keyword Analysis", "Credential Request Detection",
-      "Threat Rule Evaluation", "Threat Score Calculation", 
-      "Generating Investigation Report", "Investigation Completed"
-  ];
 
   const handleSubmit = async () => {
     if (mode === 'raw' && !headers.trim()) return;
@@ -223,7 +223,7 @@ export default function EmailInvestigation() {
                     steps={mode === 'raw' ? RAW_EMAIL_STEPS : BASE_EMAIL_STEPS} 
                     target={mode === 'raw' ? 'Raw Email Headers' : senderEmail}
                     isBackendComplete={isBackendComplete} 
-                    onRevealReport={() => setShowReport(true)} 
+                    onRevealReport={() => { setShowReport(true); setIsInvestigating(false); }} 
                 />
             </div>
         )}
