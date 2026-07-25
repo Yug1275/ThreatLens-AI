@@ -6,6 +6,13 @@ export default function InvestigationProgress({ steps, target, isBackendComplete
   const [currentStepIndex, setCurrentStepIndex] = useState(0);
   const [logs, setLogs] = useState([]);
   const logsEndRef = useRef(null);
+  const logContainerRef = useRef(null);
+  const [autoScrollLogs, setAutoScrollLogs] = useState(true);
+  const [autoScrollPipeline, setAutoScrollPipeline] = useState(true);
+  const activeStepRef = useRef(null);
+  const pipelineContainerRef = useRef(null);
+  const isPipelineProgrammaticScroll = useRef(false);
+  const pipelineScrollTimeoutRef = useRef(null);
 
   const isSimulationComplete = currentStepIndex >= steps.length;
 
@@ -35,12 +42,49 @@ export default function InvestigationProgress({ steps, target, isBackendComplete
     return () => clearTimeout(timer);
   }, [currentStepIndex, isSimulationComplete, isBackendComplete, steps, onRevealReport]);
 
-  useEffect(() => {
-    // Scroll logs to bottom
-    if (logsEndRef.current) {
-      logsEndRef.current.scrollIntoView({ behavior: 'smooth' });
+  const handleLogScroll = () => {
+    if (logContainerRef.current) {
+      const { scrollTop, scrollHeight, clientHeight } = logContainerRef.current;
+      const isBottom = Math.abs(scrollHeight - clientHeight - scrollTop) < 10;
+      setAutoScrollLogs(isBottom);
     }
-  }, [logs]);
+  };
+
+  useEffect(() => {
+    // Scroll logs to bottom precisely within the container, preventing window scroll
+    if (autoScrollLogs && logContainerRef.current) {
+      logContainerRef.current.scrollTo({
+        top: logContainerRef.current.scrollHeight,
+        behavior: 'smooth'
+      });
+    }
+  }, [logs, autoScrollLogs]);
+
+  useEffect(() => {
+    // Scroll execution pipeline precisely within container
+    if (autoScrollPipeline && activeStepRef.current && pipelineContainerRef.current) {
+      const container = pipelineContainerRef.current;
+      const activeItem = activeStepRef.current;
+      const scrollPosition = activeItem.offsetTop - container.offsetTop - (container.clientHeight / 2) + (activeItem.clientHeight / 2);
+      
+      isPipelineProgrammaticScroll.current = true;
+      container.scrollTo({ 
+          top: scrollPosition, 
+          behavior: 'smooth' 
+      });
+
+      clearTimeout(pipelineScrollTimeoutRef.current);
+      pipelineScrollTimeoutRef.current = setTimeout(() => {
+          isPipelineProgrammaticScroll.current = false;
+      }, 800);
+    }
+  }, [currentStepIndex, autoScrollPipeline]);
+
+  const handlePipelineScroll = () => {
+    if (!isPipelineProgrammaticScroll.current) {
+      setAutoScrollPipeline(false);
+    }
+  };
 
   const progressPercentage = Math.min(100, Math.round((currentStepIndex / steps.length) * 100));
   
@@ -177,13 +221,19 @@ export default function InvestigationProgress({ steps, target, isBackendComplete
             <div className="col-12 col-lg-7 d-flex flex-column gap-4">
                 
                 {/* Animated Timeline */}
-                <div className="p-4 rounded border flex-grow-1" style={{ background: 'rgba(15, 23, 42, 0.6)', borderColor: 'rgba(255,255,255,0.05)', backdropFilter: 'blur(10px)', overflowY: 'auto', maxHeight: '350px' }}>
-                    <h6 style={{ color: 'var(--tl-text-primary)', marginBottom: '1.5rem', display: 'flex', alignItems: 'center', gap: 8 }}>
-                        <Crosshair size={18} color="var(--tl-text-muted)" />
-                        Execution Pipeline
-                    </h6>
-                    <div className="position-relative" style={{ paddingLeft: '1.5rem' }}>
-                        <div className="position-absolute" style={{ left: 8, top: 10, bottom: 10, width: 2, background: 'rgba(255,255,255,0.05)' }}></div>
+                <div className="position-relative flex-grow-1">
+                    <div 
+                        className="p-4 rounded border w-100 h-100" 
+                        style={{ background: 'rgba(15, 23, 42, 0.6)', borderColor: 'rgba(255,255,255,0.05)', backdropFilter: 'blur(10px)', overflowY: 'auto', maxHeight: '350px' }}
+                        ref={pipelineContainerRef}
+                        onScroll={handlePipelineScroll}
+                    >
+                        <h6 style={{ color: 'var(--tl-text-primary)', marginBottom: '1.5rem', display: 'flex', alignItems: 'center', gap: 8 }}>
+                            <Crosshair size={18} color="var(--tl-text-muted)" />
+                            Execution Pipeline
+                        </h6>
+                        <div className="position-relative" style={{ paddingLeft: '1.5rem' }}>
+                            <div className="position-absolute" style={{ left: 8, top: 10, bottom: 10, width: 2, background: 'rgba(255,255,255,0.05)' }}></div>
                         
                         {steps.map((step, index) => {
                             const isCompleted = index < currentStepIndex;
@@ -192,7 +242,8 @@ export default function InvestigationProgress({ steps, target, isBackendComplete
 
                             return (
                                 <motion.div 
-                                    key={index} 
+                                    key={index}
+                                    ref={isRunning ? activeStepRef : null}
                                     className="position-relative mb-4 d-flex align-items-center"
                                     initial={{ opacity: 0.5, x: -10 }}
                                     animate={{ opacity: isWaiting ? 0.4 : 1, x: 0 }}
@@ -223,16 +274,38 @@ export default function InvestigationProgress({ steps, target, isBackendComplete
                                 </motion.div>
                             );
                         })}
+                        </div>
                     </div>
+                    {!autoScrollPipeline && !isSimulationComplete && (
+                        <motion.div
+                            initial={{ opacity: 0, y: 10 }}
+                            animate={{ opacity: 1, y: 0 }}
+                            className="position-absolute"
+                            style={{ bottom: '1.5rem', right: '1.5rem', zIndex: 10 }}
+                        >
+                            <button
+                                className="btn btn-sm d-flex align-items-center gap-2"
+                                style={{ background: 'var(--tl-primary)', color: 'white', border: 'none', fontSize: '0.75rem', borderRadius: '1rem', padding: '4px 12px', boxShadow: '0 4px 12px rgba(0,0,0,0.5)' }}
+                                onClick={() => setAutoScrollPipeline(true)}
+                            >
+                                Follow Current Step
+                            </button>
+                        </motion.div>
+                    )}
                 </div>
 
                 {/* Live Log Panel */}
-                <div className="p-3 rounded border" style={{ background: '#020617', borderColor: 'rgba(255,255,255,0.05)', height: '180px', display: 'flex', flexDirection: 'column' }}>
+                <div className="p-3 rounded border position-relative" style={{ background: '#020617', borderColor: 'rgba(255,255,255,0.05)', height: '180px', display: 'flex', flexDirection: 'column' }}>
                     <div className="d-flex align-items-center gap-2 mb-2 pb-2 border-bottom" style={{ borderColor: 'rgba(255,255,255,0.05)' }}>
                         <Terminal size={14} color="var(--tl-text-muted)" />
                         <span style={{ fontSize: '0.75rem', color: 'var(--tl-text-muted)', textTransform: 'uppercase', letterSpacing: '1px' }}>Live Investigation Log</span>
                     </div>
-                    <div className="flex-grow-1 overflow-auto" style={{ fontFamily: 'var(--tl-font-mono)', fontSize: '0.8125rem' }}>
+                    <div 
+                      className="flex-grow-1 overflow-auto" 
+                      style={{ fontFamily: 'var(--tl-font-mono)', fontSize: '0.8125rem' }}
+                      ref={logContainerRef}
+                      onScroll={handleLogScroll}
+                    >
                         <AnimatePresence initial={false}>
                             {logs.map((log, index) => (
                                 <motion.div 
@@ -246,8 +319,23 @@ export default function InvestigationProgress({ steps, target, isBackendComplete
                                 </motion.div>
                             ))}
                         </AnimatePresence>
-                        <div ref={logsEndRef} />
                     </div>
+                    {!autoScrollLogs && (
+                        <motion.div
+                            initial={{ opacity: 0, y: 10 }}
+                            animate={{ opacity: 1, y: 0 }}
+                            className="position-absolute"
+                            style={{ bottom: '1rem', right: '1.5rem', zIndex: 10 }}
+                        >
+                            <button
+                                className="btn btn-sm d-flex align-items-center gap-2"
+                                style={{ background: 'var(--tl-primary)', color: 'white', border: 'none', fontSize: '0.75rem', borderRadius: '1rem', padding: '4px 12px', boxShadow: '0 4px 12px rgba(0,0,0,0.5)' }}
+                                onClick={() => setAutoScrollLogs(true)}
+                            >
+                                Jump to Latest
+                            </button>
+                        </motion.div>
+                    )}
                 </div>
 
             </div>
