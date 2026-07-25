@@ -5,8 +5,8 @@ import { Upload, FileText, AlertTriangle, Download, Scan, ShieldCheck, Database,
 import api from '../utils/axios';
 import { Button } from '../components/ui/Button';
 import { Badge } from '../components/ui/Badge';
-import { Skeleton } from '../components/ui/Skeleton';
 import { PageHeader } from '../components/ui/PageHeader';
+import InvestigationProgress from '../components/investigation/InvestigationProgress';
 
 const ThreatGauge = ({ score }) => {
   let color = 'var(--tl-success)';
@@ -41,11 +41,24 @@ export default function OcrInvestigation() {
   const [file, setFile] = useState(null);
   const [previewUrl, setPreviewUrl] = useState(null);
   const [dragActive, setDragActive] = useState(false);
-  const [loading, setLoading] = useState(false);
+  
+  // Animation System States
+  const [isInvestigating, setIsInvestigating] = useState(false);
+  const [isBackendComplete, setIsBackendComplete] = useState(false);
+  const [showReport, setShowReport] = useState(false);
+
   const [result, setResult] = useState(null);
   const [error, setError] = useState(null);
   const fileInputRef = useRef(null);
   const navigate = useNavigate();
+
+  const OCR_STEPS = [
+      "Image Uploaded", "Validating Image", "OCR Engine Started",
+      "Extracting Text", "Calculating OCR Confidence", "Extracting URLs",
+      "Extracting Emails", "Extracting Phone Numbers", "Extracting Crypto Wallets",
+      "Extracting IP Addresses", "Rule-Based Threat Analysis", 
+      "Threat Score Calculation", "Generating Investigation Report", "Investigation Completed"
+  ];
 
   const handleDrag = (e) => {
     e.preventDefault();
@@ -82,11 +95,16 @@ export default function OcrInvestigation() {
     setPreviewUrl(URL.createObjectURL(selectedFile));
     setError(null);
     setResult(null);
+    setIsInvestigating(false);
+    setShowReport(false);
   };
 
   const handleSubmit = async () => {
     if (!file) return;
-    setLoading(true);
+    
+    setIsInvestigating(true);
+    setIsBackendComplete(false);
+    setShowReport(false);
     setError(null);
     setResult(null);
     
@@ -98,10 +116,10 @@ export default function OcrInvestigation() {
           headers: { 'Content-Type': 'multipart/form-data' }
       });
       setResult(res.data.result_data);
+      setIsBackendComplete(true);
     } catch (err) {
       setError(err.response?.data?.detail || 'An error occurred during OCR analysis.');
-    } finally {
-      setLoading(false);
+      setIsInvestigating(false);
     }
   };
 
@@ -177,12 +195,15 @@ export default function OcrInvestigation() {
                             </div>
                             <h6 style={{ color: 'var(--tl-text-primary)', fontWeight: 600 }}>{file.name}</h6>
                             <p style={{ color: 'var(--tl-text-muted)', fontSize: '0.75rem' }}>{(file.size / 1024).toFixed(2)} KB</p>
-                            <div className="d-flex justify-content-center gap-3 mt-2">
-                                <Button variant="ghost" size="sm" onClick={() => { setFile(null); setPreviewUrl(null); setResult(null); }}>Clear</Button>
-                                <Button size="sm" onClick={handleSubmit} disabled={loading} icon={loading ? undefined : <Scan size={16} />}>
-                                    {loading ? 'Extracting Text...' : 'Run OCR Analysis'}
-                                </Button>
-                            </div>
+                            
+                            {(!isInvestigating || showReport) && (
+                                <div className="d-flex justify-content-center gap-3 mt-2">
+                                    <Button variant="ghost" size="sm" onClick={() => { setFile(null); setPreviewUrl(null); setResult(null); setShowReport(false); setIsInvestigating(false); }}>Clear</Button>
+                                    <Button size="sm" onClick={handleSubmit} icon={<Scan size={16} />}>
+                                        Run OCR Analysis
+                                    </Button>
+                                </div>
+                            )}
                         </div>
                     )}
                     
@@ -191,32 +212,22 @@ export default function OcrInvestigation() {
             </motion.div>
         </div>
 
-        {/* Loading State */}
-        {loading && (
+        {/* Animation System */}
+        {isInvestigating && !showReport && !error && (
             <div className="col-12">
-                <motion.div initial={{ opacity: 0 }} animate={{ opacity: 1 }} className="row g-4">
-                    <div className="col-md-4">
-                        <div className="tl-card p-4 h-100 d-flex flex-column gap-3">
-                            <Skeleton h="20px" w="40%" />
-                            <Skeleton h="100px" />
-                        </div>
-                    </div>
-                    <div className="col-md-8">
-                        <div className="tl-card p-4 h-100 d-flex flex-column gap-3">
-                            <Skeleton h="20px" w="30%" />
-                            <Skeleton h="40px" />
-                            <Skeleton h="40px" />
-                            <Skeleton h="40px" />
-                        </div>
-                    </div>
-                </motion.div>
+                <InvestigationProgress 
+                    steps={OCR_STEPS} 
+                    target={file?.name}
+                    isBackendComplete={isBackendComplete} 
+                    onRevealReport={() => setShowReport(true)} 
+                />
             </div>
         )}
 
         {/* Results Dashboard */}
-        {result && (
+        {showReport && result && (
             <div className="col-12">
-                <motion.div initial={{ opacity: 0, y: 10 }} animate={{ opacity: 1, y: 0 }}>
+                <motion.div initial={{ opacity: 0, y: 20 }} animate={{ opacity: 1, y: 0 }} transition={{ duration: 0.5 }}>
                     
                     <div className="row g-4 mb-4">
                         

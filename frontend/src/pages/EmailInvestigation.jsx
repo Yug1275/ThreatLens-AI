@@ -5,8 +5,8 @@ import { Mail, CheckCircle, AlertTriangle, Download, Server, ShieldAlert, XCircl
 import api from '../utils/axios';
 import { Button } from '../components/ui/Button';
 import { Badge } from '../components/ui/Badge';
-import { Skeleton } from '../components/ui/Skeleton';
 import { PageHeader } from '../components/ui/PageHeader';
+import InvestigationProgress from '../components/investigation/InvestigationProgress';
 
 const ThreatGauge = ({ score }) => {
   let color = 'var(--tl-success)';
@@ -46,15 +46,39 @@ export default function EmailInvestigation() {
   const [subject, setSubject] = useState('');
   const [body, setBody] = useState('');
   
-  const [loading, setLoading] = useState(false);
+  // Animation System States
+  const [isInvestigating, setIsInvestigating] = useState(false);
+  const [isBackendComplete, setIsBackendComplete] = useState(false);
+  const [showReport, setShowReport] = useState(false);
+
   const [result, setResult] = useState(null);
   const [error, setError] = useState(null);
+
+  const BASE_EMAIL_STEPS = [
+      "Email Submitted", "Parsing Email", "Extracting Sender",
+      "Extracting Subject", "Extracting Body", "Extracting URLs",
+      "Extracting Email Addresses", "Extracting Phone Numbers", "Typosquatting Detection",
+      "Brand Impersonation Detection", "Keyword Analysis", "Credential Request Detection",
+      "Threat Rule Evaluation", "Threat Score Calculation", 
+      "Generating Investigation Report", "Investigation Completed"
+  ];
+  
+  const RAW_EMAIL_STEPS = [
+      "Email Submitted", "Parsing Email", "Header Analysis", "SPF Validation", "DKIM Validation", "DMARC Validation", "Originating IP Analysis", "Extracting Sender",
+      "Extracting Subject", "Extracting Body", "Extracting URLs",
+      "Extracting Email Addresses", "Extracting Phone Numbers", "Typosquatting Detection",
+      "Brand Impersonation Detection", "Keyword Analysis", "Credential Request Detection",
+      "Threat Rule Evaluation", "Threat Score Calculation", 
+      "Generating Investigation Report", "Investigation Completed"
+  ];
 
   const handleSubmit = async () => {
     if (mode === 'raw' && !headers.trim()) return;
     if (mode === 'structured' && (!senderEmail.trim() || !body.trim())) return;
     
-    setLoading(true);
+    setIsInvestigating(true);
+    setIsBackendComplete(false);
+    setShowReport(false);
     setError(null);
     setResult(null);
     
@@ -65,10 +89,10 @@ export default function EmailInvestigation() {
         
       const res = await api.post('/api/v1/investigation/email', payload);
       setResult(res.data.result_data);
+      setIsBackendComplete(true);
     } catch (err) {
       setError(err.response?.data?.detail || 'An error occurred during email analysis.');
-    } finally {
-      setLoading(false);
+      setIsInvestigating(false);
     }
   };
   
@@ -177,13 +201,13 @@ export default function EmailInvestigation() {
                             : "Authentication checks (SPF/DKIM) are not possible in Structured Mode."}
                     </div>
                     <div className="d-flex gap-3">
-                        <Button variant="ghost" onClick={() => { setHeaders(''); setSenderEmail(''); setSubject(''); setBody(''); setResult(null); }}>Clear</Button>
+                        <Button variant="ghost" onClick={() => { setHeaders(''); setSenderEmail(''); setSubject(''); setBody(''); setResult(null); setShowReport(false); setIsInvestigating(false); }}>Clear</Button>
                         <Button 
                             onClick={handleSubmit} 
-                            disabled={loading || (mode === 'raw' && !headers) || (mode === 'structured' && (!senderEmail || !body))} 
-                            icon={loading ? undefined : <Search size={16} />}
+                            disabled={isInvestigating || (mode === 'raw' && !headers) || (mode === 'structured' && (!senderEmail || !body))} 
+                            icon={(isInvestigating && !showReport) ? undefined : <Search size={16} />}
                         >
-                            {loading ? 'Analyzing...' : 'Extract & Analyze'}
+                            {(isInvestigating && !showReport) ? 'Analyzing...' : 'Extract & Analyze'}
                         </Button>
                     </div>
                 </div>
@@ -192,32 +216,22 @@ export default function EmailInvestigation() {
             </motion.div>
         </div>
 
-        {/* Loading State */}
-        {loading && (
+        {/* Animation System */}
+        {isInvestigating && !showReport && !error && (
             <div className="col-12">
-                <motion.div initial={{ opacity: 0 }} animate={{ opacity: 1 }} className="row g-4">
-                    <div className="col-md-4">
-                        <div className="tl-card p-4 h-100 d-flex flex-column gap-3">
-                            <Skeleton h="20px" w="40%" />
-                            <Skeleton h="100px" />
-                        </div>
-                    </div>
-                    <div className="col-md-8">
-                        <div className="tl-card p-4 h-100 d-flex flex-column gap-3">
-                            <Skeleton h="20px" w="30%" />
-                            <Skeleton h="40px" />
-                            <Skeleton h="40px" />
-                            <Skeleton h="40px" />
-                        </div>
-                    </div>
-                </motion.div>
+                <InvestigationProgress 
+                    steps={mode === 'raw' ? RAW_EMAIL_STEPS : BASE_EMAIL_STEPS} 
+                    target={mode === 'raw' ? 'Raw Email Headers' : senderEmail}
+                    isBackendComplete={isBackendComplete} 
+                    onRevealReport={() => setShowReport(true)} 
+                />
             </div>
         )}
 
         {/* Results Dashboard */}
-        {result && (
+        {showReport && result && (
             <div className="col-12">
-                <motion.div initial={{ opacity: 0, y: 10 }} animate={{ opacity: 1, y: 0 }}>
+                <motion.div initial={{ opacity: 0, y: 10 }} animate={{ opacity: 1, y: 0 }} transition={{ duration: 0.5 }}>
                     <div className="d-flex justify-content-between align-items-center mb-4">
                         <h5 style={{ color: 'var(--tl-text-primary)', margin: 0, fontWeight: 600 }}>Investigation Report</h5>
                         <Button variant="secondary" size="sm" icon={<Download size={16} />}>Export Report</Button>

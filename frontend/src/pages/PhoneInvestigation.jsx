@@ -5,8 +5,8 @@ import { PhoneCall, Search, AlertTriangle, ShieldCheck, Download, MapPin, Signal
 import api from '../utils/axios';
 import { Button } from '../components/ui/Button';
 import { Badge } from '../components/ui/Badge';
-import { Skeleton } from '../components/ui/Skeleton';
 import { PageHeader } from '../components/ui/PageHeader';
+import InvestigationProgress from '../components/investigation/InvestigationProgress';
 
 const ThreatGauge = ({ score }) => {
   let color = 'var(--tl-success)';
@@ -42,25 +42,39 @@ const ThreatGauge = ({ score }) => {
 export default function PhoneInvestigation() {
   const location = useLocation();
   const [phoneNumber, setPhoneNumber] = useState(location.state?.target || '');
-  const [loading, setLoading] = useState(false);
+  
+  // Animation System States
+  const [isInvestigating, setIsInvestigating] = useState(false);
+  const [isBackendComplete, setIsBackendComplete] = useState(false);
+  const [showReport, setShowReport] = useState(false);
+
   const [result, setResult] = useState(null);
   const [error, setError] = useState(null);
+
+  const PHONE_STEPS = [
+      "Phone Submitted", "Validating Phone Number", "Normalizing Number",
+      "Country Detection", "Region Detection", "Carrier Lookup",
+      "Number Classification", "Pattern Analysis", "Threat Rule Evaluation",
+      "Threat Score Calculation", "Generating Investigation Report", "Investigation Completed"
+  ];
 
   const handleSubmit = async (e) => {
     e.preventDefault();
     if (!phoneNumber.trim()) return;
     
-    setLoading(true);
+    setIsInvestigating(true);
+    setIsBackendComplete(false);
+    setShowReport(false);
     setError(null);
     setResult(null);
     
     try {
       const res = await api.post('/api/v1/investigation/phone', { phone_number: phoneNumber });
       setResult(res.data.result_data);
+      setIsBackendComplete(true);
     } catch (err) {
       setError(err.response?.data?.detail || 'An error occurred during phone analysis.');
-    } finally {
-      setLoading(false);
+      setIsInvestigating(false);
     }
   };
 
@@ -96,8 +110,8 @@ export default function PhoneInvestigation() {
                             </div>
                         </div>
                         <div className="col-md-3 d-flex align-items-end pb-4">
-                            <Button type="submit" disabled={!phoneNumber || loading} className="w-100" icon={loading ? undefined : <Search size={16} />}>
-                                {loading ? 'Analyzing...' : 'Investigate Phone'}
+                            <Button type="submit" disabled={!phoneNumber || isInvestigating} className="w-100" icon={(isInvestigating && !showReport) ? undefined : <Search size={16} />}>
+                                {(isInvestigating && !showReport) ? 'Analyzing...' : 'Investigate Phone'}
                             </Button>
                         </div>
                     </div>
@@ -106,32 +120,22 @@ export default function PhoneInvestigation() {
             </motion.div>
         </div>
 
-        {/* Loading State */}
-        {loading && (
+        {/* Animation System */}
+        {isInvestigating && !showReport && !error && (
             <div className="col-12">
-                <motion.div initial={{ opacity: 0 }} animate={{ opacity: 1 }} className="row g-4">
-                    <div className="col-md-4">
-                        <div className="tl-card p-4 h-100 d-flex flex-column gap-3">
-                            <Skeleton h="20px" w="40%" />
-                            <Skeleton h="100px" />
-                        </div>
-                    </div>
-                    <div className="col-md-8">
-                        <div className="tl-card p-4 h-100 d-flex flex-column gap-3">
-                            <Skeleton h="20px" w="30%" />
-                            <Skeleton h="40px" />
-                            <Skeleton h="40px" />
-                            <Skeleton h="40px" />
-                        </div>
-                    </div>
-                </motion.div>
+                <InvestigationProgress 
+                    steps={PHONE_STEPS} 
+                    target={phoneNumber}
+                    isBackendComplete={isBackendComplete} 
+                    onRevealReport={() => setShowReport(true)} 
+                />
             </div>
         )}
 
         {/* Results Dashboard */}
-        {result && (
+        {showReport && result && (
             <div className="col-12">
-                <motion.div initial={{ opacity: 0, y: 10 }} animate={{ opacity: 1, y: 0 }}>
+                <motion.div initial={{ opacity: 0, y: 10 }} animate={{ opacity: 1, y: 0 }} transition={{ duration: 0.5 }}>
                     <div className="d-flex justify-content-between align-items-center mb-4">
                         <h5 style={{ color: 'var(--tl-text-primary)', margin: 0, fontWeight: 600 }}>Investigation Report</h5>
                         <Button variant="secondary" size="sm" icon={<Download size={16} />}>Export Report</Button>
