@@ -62,7 +62,7 @@ export default function MainLayout() {
       </header>
 
       {/* Page Content */}
-      <main style={{ position: 'relative', zIndex: 1 }}>
+      <main style={{ position: 'relative', zIndex: 1, paddingTop: '100px' }}>
         <Outlet />
       </main>
     </div>

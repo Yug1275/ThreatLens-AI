@@ -1,23 +1,14 @@
 import React from 'react';
 
-export const Skeleton = ({ width = '100%', height = '20px', className = '', circle = false }) => {
-  const style = {
-    width,
-    height,
-    borderRadius: circle ? '50%' : '4px',
-  };
-
+export const Skeleton = ({ w = '100%', h = '20px', r = false, className = '' }) => {
   return (
     <div 
-      className={`skeleton ${className}`} 
-      style={style}
+      className={`tl-skeleton ${className}`} 
+      style={{ 
+        width: w, 
+        height: h, 
+        borderRadius: r ? '50%' : undefined 
+      }} 
     />
   );
 };
-
-export const SkeletonCard = () => (
-  <div className="premium-card p-4">
-    <Skeleton width="40%" height="24px" className="mb-3" />
-    <Skeleton width="100%" height="60px" />
-  </div>
-);

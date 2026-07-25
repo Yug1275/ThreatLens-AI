@@ -1,42 +1,51 @@
 import React from 'react';
-import { Button as BootstrapButton } from 'react-bootstrap';
 import { motion } from 'framer-motion';
 
-export const Button = ({ 
-  children, 
-  variant = 'primary', 
-  className = '', 
+export const Button = ({
+  children,
+  variant = 'primary',
+  size = 'md',
+  className = '',
   icon = null,
   fullWidth = false,
-  ...props 
+  as: Component = 'button',
+  ...props
 }) => {
   let variantClass = '';
-  
   switch (variant) {
-    case 'primary':
-      variantClass = 'bg-primary-custom border-0';
-      break;
-    case 'secondary':
-      variantClass = 'bg-dark-800 border-slate-700 text-slate-200 hover-bg-slate-800';
-      break;
-    case 'danger':
-      variantClass = 'btn-danger';
-      break;
-    case 'ghost':
-      variantClass = 'bg-transparent border-0 text-slate-300 hover-text-white hover-bg-slate-800';
-      break;
-    default:
-      variantClass = `btn-${variant}`;
+    case 'primary': variantClass = 'tl-btn-primary'; break;
+    case 'secondary': variantClass = 'tl-btn-secondary'; break;
+    case 'danger': variantClass = 'tl-btn-danger'; break;
+    case 'ghost': variantClass = 'tl-btn-ghost'; break;
+    default: variantClass = `tl-btn-${variant}`;
   }
 
-  const classes = `d-flex align-items-center justify-content-center gap-2 ${fullWidth ? 'w-100' : ''} ${variantClass} ${className}`;
+  let sizeClass = '';
+  if (size === 'sm') sizeClass = 'tl-btn-sm';
+  if (size === 'lg') sizeClass = 'tl-btn-lg';
+
+  const classes = `tl-btn ${variantClass} ${sizeClass} ${fullWidth ? 'w-100' : ''} ${className}`;
+
+  const content = (
+    <>
+      {icon && <span style={{ display: 'flex', alignItems: 'center' }}>{icon}</span>}
+      {children}
+    </>
+  );
+
+  if (Component !== 'button') {
+    return (
+      <motion.div whileTap={{ scale: 0.98 }} style={{ display: fullWidth ? 'block' : 'inline-block', width: fullWidth ? '100%' : 'auto' }}>
+        <Component className={classes} {...props}>
+          {content}
+        </Component>
+      </motion.div>
+    );
+  }
 
   return (
-    <motion.div whileTap={{ scale: 0.98 }}>
-      <BootstrapButton className={classes} {...props}>
-        {icon && <span className="d-flex align-items-center">{icon}</span>}
-        {children}
-      </BootstrapButton>
-    </motion.div>
+    <motion.button whileTap={{ scale: 0.98 }} className={classes} {...props}>
+      {content}
+    </motion.button>
   );
 };
