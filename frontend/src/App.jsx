@@ -13,6 +13,7 @@ import ResetPassword from './pages/ResetPassword';
 import Profile from './pages/Profile';
 import Dashboard from './pages/Dashboard';
 import UrlInvestigation from './pages/UrlInvestigation';
+import OcrInvestigation from './pages/OcrInvestigation';
 
 /* ——————————————— Premium Landing Page ——————————————— */
 const Home = () => (
@@ -135,6 +136,7 @@ function App() {
             <Route path="profile" element={<Profile />} />
             <Route path="investigations" element={<Investigations />} />
             <Route path="investigations/url" element={<UrlInvestigation />} />
+            <Route path="investigations/ocr" element={<OcrInvestigation />} />
             <Route path="history" element={<HistoryPage />} />
             <Route path="reports" element={<Reports />} />
             <Route path="settings" element={<SettingsPage />} />

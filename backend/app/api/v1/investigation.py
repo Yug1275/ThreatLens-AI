@@ -1,4 +1,4 @@
-from fastapi import APIRouter, Depends, HTTPException, status
+from fastapi import APIRouter, Depends, HTTPException, status, UploadFile, File
 from sqlalchemy.orm import Session
 from datetime import datetime, timezone
 from typing import List
@@ -7,6 +7,7 @@ from app.api.deps import get_db, get_current_user
 from app.models.user import User
 from app.models.investigation import Investigation
 from app.services.url_investigator import URLInvestigatorService
+from app.services.ocr_investigator import OCRInvestigatorService
 from pydantic import BaseModel
 
 router = APIRouter()
@@ -37,6 +38,41 @@ def submit_url_investigation(
         user_id=current_user.id,
         type="URL",
         target=submission.url,
+        status="COMPLETED",
+        threat_score=results.get("threat_score", 0),
+        completed_at=datetime.now(timezone.utc),
+        result_data=results
+    )
+    db.add(inv)
+    db.commit()
+    db.refresh(inv)
+    
+    return inv
+
+@router.post("/ocr")
+async def submit_ocr_investigation(
+    file: UploadFile = File(...),
+    current_user: User = Depends(get_current_user),
+    db: Session = Depends(get_db)
+):
+    if not file.filename:
+        raise HTTPException(status_code=400, detail="No file uploaded")
+        
+    # Read file size (simulating processing)
+    file_bytes = await file.read()
+    filesize = len(file_bytes)
+    
+    # Perform mock OCR investigation
+    try:
+        results = OCRInvestigatorService.analyze(file.filename, filesize)
+    except Exception as e:
+        raise HTTPException(status_code=500, detail=str(e))
+        
+    # Create DB record
+    inv = Investigation(
+        user_id=current_user.id,
+        type="OCR",
+        target=file.filename,
         status="COMPLETED",
         threat_score=results.get("threat_score", 0),
         completed_at=datetime.now(timezone.utc),
