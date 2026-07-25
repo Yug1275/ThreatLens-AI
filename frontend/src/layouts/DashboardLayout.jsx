@@ -4,7 +4,7 @@ import { AuthContext } from '../context/AuthContext';
 import { motion, AnimatePresence } from 'framer-motion';
 import { 
   LayoutDashboard, Search, Shield, FileText, History, Settings, LogOut,
-  Menu, Bell, ChevronRight, X, Crosshair, User as UserIcon
+  Menu, Bell, ChevronRight, X, Crosshair, User as UserIcon, QrCode
 } from 'lucide-react';
 
 export default function DashboardLayout() {
@@ -35,6 +35,7 @@ export default function DashboardLayout() {
     { name: 'Dashboard', path: '/dashboard', icon: LayoutDashboard },
     { name: 'URL Investigation', path: '/investigations/url', icon: Crosshair },
     { name: 'OCR Investigation', path: '/investigations/ocr', icon: FileText },
+    { name: 'QR Investigation', path: '/investigations/qr', icon: QrCode },
     { name: 'Reports', path: '/reports', icon: FileText },
     { name: 'History', path: '/history', icon: History },
   ];

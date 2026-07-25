@@ -14,6 +14,7 @@ import Profile from './pages/Profile';
 import Dashboard from './pages/Dashboard';
 import UrlInvestigation from './pages/UrlInvestigation';
 import OcrInvestigation from './pages/OcrInvestigation';
+import QrInvestigation from './pages/QrInvestigation';
 
 /* ——————————————— Premium Landing Page ——————————————— */
 const Home = () => (
@@ -137,6 +138,7 @@ function App() {
             <Route path="investigations" element={<Investigations />} />
             <Route path="investigations/url" element={<UrlInvestigation />} />
             <Route path="investigations/ocr" element={<OcrInvestigation />} />
+            <Route path="investigations/qr" element={<QrInvestigation />} />
             <Route path="history" element={<HistoryPage />} />
             <Route path="reports" element={<Reports />} />
             <Route path="settings" element={<SettingsPage />} />

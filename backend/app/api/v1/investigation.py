@@ -8,6 +8,7 @@ from app.models.user import User
 from app.models.investigation import Investigation
 from app.services.url_investigator import URLInvestigatorService
 from app.services.ocr_investigator import OCRInvestigatorService
+from app.services.qr_investigator import QRInvestigatorService
 from pydantic import BaseModel
 
 router = APIRouter()
@@ -72,6 +73,41 @@ async def submit_ocr_investigation(
     inv = Investigation(
         user_id=current_user.id,
         type="OCR",
+        target=file.filename,
+        status="COMPLETED",
+        threat_score=results.get("threat_score", 0),
+        completed_at=datetime.now(timezone.utc),
+        result_data=results
+    )
+    db.add(inv)
+    db.commit()
+    db.refresh(inv)
+    
+    return inv
+
+@router.post("/qr")
+async def submit_qr_investigation(
+    file: UploadFile = File(...),
+    current_user: User = Depends(get_current_user),
+    db: Session = Depends(get_db)
+):
+    if not file.filename:
+        raise HTTPException(status_code=400, detail="No file uploaded")
+        
+    # Read file size (simulating processing)
+    file_bytes = await file.read()
+    filesize = len(file_bytes)
+    
+    # Perform mock QR investigation
+    try:
+        results = QRInvestigatorService.analyze(file.filename, filesize)
+    except Exception as e:
+        raise HTTPException(status_code=500, detail=str(e))
+        
+    # Create DB record
+    inv = Investigation(
+        user_id=current_user.id,
+        type="QR",
         target=file.filename,
         status="COMPLETED",
         threat_score=results.get("threat_score", 0),
