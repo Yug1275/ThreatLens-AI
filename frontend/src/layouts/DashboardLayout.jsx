@@ -33,7 +33,7 @@ export default function DashboardLayout() {
 
   const mainNav = [
     { name: 'Dashboard', path: '/dashboard', icon: LayoutDashboard },
-    { name: 'Investigations', path: '/investigations', icon: Crosshair },
+    { name: 'Investigations', path: '/investigations/url', icon: Crosshair },
     { name: 'Reports', path: '/reports', icon: FileText },
     { name: 'History', path: '/history', icon: History },
   ];

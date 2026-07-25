@@ -12,6 +12,7 @@ import ForgotPassword from './pages/ForgotPassword';
 import ResetPassword from './pages/ResetPassword';
 import Profile from './pages/Profile';
 import Dashboard from './pages/Dashboard';
+import UrlInvestigation from './pages/UrlInvestigation';
 
 /* ——————————————— Premium Landing Page ——————————————— */
 const Home = () => (
@@ -133,6 +134,7 @@ function App() {
             <Route path="dashboard" element={<Dashboard />} />
             <Route path="profile" element={<Profile />} />
             <Route path="investigations" element={<Investigations />} />
+            <Route path="investigations/url" element={<UrlInvestigation />} />
             <Route path="history" element={<HistoryPage />} />
             <Route path="reports" element={<Reports />} />
             <Route path="settings" element={<SettingsPage />} />
