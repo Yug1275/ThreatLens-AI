@@ -9,12 +9,23 @@ from app.models.investigation import Investigation
 from app.services.url_investigator import URLInvestigatorService
 from app.services.ocr_investigator import OCRInvestigatorService
 from app.services.qr_investigator import QRInvestigatorService
+from app.services.email_investigator import EmailInvestigatorService
+from app.services.phone_investigator import PhoneInvestigatorService
 from pydantic import BaseModel
 
 router = APIRouter()
 
 class URLSubmission(BaseModel):
     url: str
+
+class EmailSubmission(BaseModel):
+    raw_headers: str = None
+    sender_email: str = None
+    subject: str = None
+    body: str = None
+
+class PhoneSubmission(BaseModel):
+    phone_number: str
 
 @router.post("/url")
 def submit_url_investigation(
@@ -59,17 +70,13 @@ async def submit_ocr_investigation(
     if not file.filename:
         raise HTTPException(status_code=400, detail="No file uploaded")
         
-    # Read file size (simulating processing)
     file_bytes = await file.read()
-    filesize = len(file_bytes)
     
-    # Perform mock OCR investigation
     try:
-        results = OCRInvestigatorService.analyze(file.filename, filesize)
+        results = OCRInvestigatorService.analyze(file_bytes)
     except Exception as e:
         raise HTTPException(status_code=500, detail=str(e))
         
-    # Create DB record
     inv = Investigation(
         user_id=current_user.id,
         type="OCR",
@@ -94,21 +101,82 @@ async def submit_qr_investigation(
     if not file.filename:
         raise HTTPException(status_code=400, detail="No file uploaded")
         
-    # Read file size (simulating processing)
     file_bytes = await file.read()
-    filesize = len(file_bytes)
     
-    # Perform mock QR investigation
     try:
-        results = QRInvestigatorService.analyze(file.filename, filesize)
+        results = QRInvestigatorService.analyze(file_bytes)
     except Exception as e:
         raise HTTPException(status_code=500, detail=str(e))
         
-    # Create DB record
     inv = Investigation(
         user_id=current_user.id,
         type="QR",
         target=file.filename,
+        status="COMPLETED",
+        threat_score=results.get("threat_score", 0),
+        completed_at=datetime.now(timezone.utc),
+        result_data=results
+    )
+    db.add(inv)
+    db.commit()
+    db.refresh(inv)
+    
+    return inv
+
+@router.post("/email")
+def submit_email_investigation(
+    submission: EmailSubmission,
+    current_user: User = Depends(get_current_user),
+    db: Session = Depends(get_db)
+):
+    if not submission.raw_headers and not (submission.sender_email and submission.body):
+        raise HTTPException(status_code=400, detail="Must provide either raw_headers or structured email fields")
+        
+    try:
+        results = EmailInvestigatorService.analyze(
+            raw_headers=submission.raw_headers,
+            sender_email=submission.sender_email,
+            subject=submission.subject,
+            body=submission.body
+        )
+    except Exception as e:
+        raise HTTPException(status_code=500, detail=str(e))
+        
+    inv = Investigation(
+        user_id=current_user.id,
+        type="EMAIL",
+        target="Raw Headers" if submission.raw_headers else f"Structured: {submission.sender_email}",
+        status="COMPLETED",
+        threat_score=results.get("threat_score", 0),
+        completed_at=datetime.now(timezone.utc),
+        result_data=results
+    )
+    db.add(inv)
+    db.commit()
+    db.refresh(inv)
+    
+    return inv
+
+    return inv
+
+@router.post("/phone")
+def submit_phone_investigation(
+    submission: PhoneSubmission,
+    current_user: User = Depends(get_current_user),
+    db: Session = Depends(get_db)
+):
+    if not submission.phone_number:
+        raise HTTPException(status_code=400, detail="No phone number provided")
+        
+    try:
+        results = PhoneInvestigatorService.analyze(submission.phone_number)
+    except Exception as e:
+        raise HTTPException(status_code=500, detail=str(e))
+        
+    inv = Investigation(
+        user_id=current_user.id,
+        type="PHONE",
+        target=submission.phone_number,
         status="COMPLETED",
         threat_score=results.get("threat_score", 0),
         completed_at=datetime.now(timezone.utc),

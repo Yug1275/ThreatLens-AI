@@ -1,6 +1,7 @@
 import React, { useState, useRef } from 'react';
+import { useNavigate } from 'react-router-dom';
 import { motion } from 'framer-motion';
-import { Upload, QrCode, AlertTriangle, Download, Link as LinkIcon, ExternalLink, ShieldCheck } from 'lucide-react';
+import { Upload, QrCode, AlertTriangle, Download, Link as LinkIcon, Mail, PhoneCall, Wifi, User, MapPin, Scan, FileText, CheckCircle, Database, ShieldAlert, XCircle } from 'lucide-react';
 import api from '../utils/axios';
 import { Button } from '../components/ui/Button';
 import { Badge } from '../components/ui/Badge';
@@ -44,6 +45,7 @@ export default function QrInvestigation() {
   const [result, setResult] = useState(null);
   const [error, setError] = useState(null);
   const fileInputRef = useRef(null);
+  const navigate = useNavigate();
 
   const handleDrag = (e) => {
     e.preventDefault();
@@ -102,19 +104,45 @@ export default function QrInvestigation() {
       setLoading(false);
     }
   };
-  
+
+  const handleDeepInvestigation = () => {
+      if (!result) return;
+      const content = result.content;
+      if (result.type === "URL") {
+          navigate('/investigations/url', { state: { target: content } });
+      } else if (result.type === "Email") {
+          navigate('/investigations/email', { state: { target: content } });
+      } else if (result.type === "Phone") {
+          navigate('/investigations/phone', { state: { target: content } });
+      }
+  };
+
+  const getIconForType = (type) => {
+      switch(type) {
+          case 'URL': return <LinkIcon size={18} color="var(--tl-primary-light)" />;
+          case 'Email': return <Mail size={18} color="var(--tl-primary-light)" />;
+          case 'Phone': return <PhoneCall size={18} color="var(--tl-primary-light)" />;
+          case 'WiFi': return <Wifi size={18} color="var(--tl-primary-light)" />;
+          case 'Contact Card': return <User size={18} color="var(--tl-primary-light)" />;
+          case 'Geo Location': return <MapPin size={18} color="var(--tl-primary-light)" />;
+          default: return <FileText size={18} color="var(--tl-primary-light)" />;
+      }
+  };
+
+  const canDeepInvestigate = result && ['URL', 'Email', 'Phone'].includes(result.type);
+
   return (
     <div className="pb-5">
       <PageHeader 
-        title="QR Code Investigation" 
-        subtitle="Safely decode and analyze embedded QR URLs before scanning them on your mobile device."
+        title="QR Code Investigation Engine" 
+        subtitle="Decode QR codes locally, determine content types automatically, and perform threat assessment before execution."
       />
 
       <div className="row g-4 mb-5">
-        <div className="col-lg-6">
+        <div className="col-12">
             <motion.div initial={{ opacity: 0, y: 10 }} animate={{ opacity: 1, y: 0 }} className="h-100">
                 <div 
-                    className={`tl-card p-5 text-center h-100 d-flex flex-column justify-content-center ${dragActive ? 'border-primary' : ''}`}
+                    className={`tl-card p-5 text-center d-flex flex-column justify-content-center ${dragActive ? 'border-primary' : ''}`}
                     onDragEnter={handleDrag}
                     onDragLeave={handleDrag}
                     onDragOver={handleDrag}
@@ -124,7 +152,7 @@ export default function QrInvestigation() {
                         borderWidth: '2px',
                         borderColor: dragActive ? 'var(--tl-primary)' : 'var(--tl-border)',
                         transition: 'all 0.2s ease',
-                        minHeight: '300px'
+                        minHeight: '250px'
                     }}
                 >
                     <input 
@@ -155,8 +183,8 @@ export default function QrInvestigation() {
                             <p style={{ color: 'var(--tl-text-muted)', fontSize: '0.75rem' }}>{(file.size / 1024).toFixed(2)} KB</p>
                             <div className="d-flex justify-content-center gap-3 mt-2">
                                 <Button variant="ghost" size="sm" onClick={() => { setFile(null); setPreviewUrl(null); setResult(null); }}>Clear</Button>
-                                <Button size="sm" onClick={handleSubmit} disabled={loading} icon={loading ? undefined : <ShieldCheck size={16} />}>
-                                    {loading ? 'Decoding...' : 'Safe Scan'}
+                                <Button size="sm" onClick={handleSubmit} disabled={loading} icon={loading ? undefined : <Scan size={16} />}>
+                                    {loading ? 'Decoding...' : 'Decode & Analyze'}
                                 </Button>
                             </div>
                         </div>
@@ -169,16 +197,19 @@ export default function QrInvestigation() {
 
         {/* Loading State */}
         {loading && (
-            <div className="col-lg-6">
-                <motion.div initial={{ opacity: 0 }} animate={{ opacity: 1 }} className="tl-card p-4 h-100 d-flex flex-column gap-3">
-                    <Skeleton w="50%" h="24px" className="mb-2" />
-                    <Skeleton w="100%" h="80px" />
-                    <div className="d-flex gap-4 mt-3">
-                        <Skeleton w="100px" h="100px" r />
-                        <div className="flex-grow-1 d-flex flex-column gap-2">
-                            <Skeleton w="100%" h="20px" />
-                            <Skeleton w="80%" h="20px" />
-                            <Skeleton w="90%" h="20px" />
+            <div className="col-12">
+                <motion.div initial={{ opacity: 0 }} animate={{ opacity: 1 }} className="row g-4">
+                    <div className="col-md-4">
+                        <div className="tl-card p-4 h-100 d-flex flex-column gap-3">
+                            <Skeleton h="20px" w="40%" />
+                            <Skeleton h="100px" />
+                        </div>
+                    </div>
+                    <div className="col-md-8">
+                        <div className="tl-card p-4 h-100 d-flex flex-column gap-3">
+                            <Skeleton h="20px" w="30%" />
+                            <Skeleton h="80px" />
+                            <Skeleton h="40px" />
                         </div>
                     </div>
                 </motion.div>
@@ -187,47 +218,91 @@ export default function QrInvestigation() {
 
         {/* Results Dashboard */}
         {result && (
-            <div className="col-lg-6">
-                <motion.div initial={{ opacity: 0, x: 20 }} animate={{ opacity: 1, x: 0 }} className="h-100">
-                    <div className="tl-card d-flex flex-column h-100">
-                        <div className="px-4 py-3 border-bottom d-flex justify-content-between align-items-center" style={{ borderColor: 'var(--tl-border)' }}>
-                            <div style={{ fontWeight: 600, color: 'var(--tl-text-primary)' }}>Scan Results</div>
-                            <Button variant="ghost" size="sm" icon={<Download size={16} />}>Export</Button>
-                        </div>
+            <div className="col-12">
+                <motion.div initial={{ opacity: 0, y: 10 }} animate={{ opacity: 1, y: 0 }}>
+                    
+                    <div className="row g-4 mb-4">
                         
-                        <div className="p-4 flex-grow-1">
-                            {/* Safe Preview URL Panel */}
-                            <div className="mb-4">
-                                <div className="d-flex align-items-center gap-2 mb-2">
-                                    <LinkIcon size={16} color="var(--tl-text-muted)" />
-                                    <h6 style={{ fontSize: '0.8125rem', color: 'var(--tl-text-muted)', margin: 0 }}>Embedded URL</h6>
-                                </div>
-                                <div className="p-3 rounded d-flex align-items-center justify-content-between gap-3" style={{ background: result.is_suspicious ? 'rgba(var(--tl-danger-rgb), 0.05)' : 'var(--tl-bg-surface)', border: `1px solid ${result.is_suspicious ? 'rgba(var(--tl-danger-rgb), 0.2)' : 'var(--tl-border)'}` }}>
-                                    <div style={{ fontFamily: 'var(--tl-font-mono)', fontSize: '0.875rem', color: 'var(--tl-text-primary)', wordBreak: 'break-all' }}>
-                                        {result.embedded_url}
-                                    </div>
-                                </div>
-                            </div>
-                            
-                            <div className="row g-4">
-                                <div className="col-sm-5 d-flex flex-column align-items-center justify-content-center">
+                        {/* Risk Assessment */}
+                        <div className="col-12 col-xl-4 d-flex flex-column gap-4">
+                            <div className="tl-card p-4 text-center h-100 d-flex flex-column">
+                                <h6 style={{ fontWeight: 600, color: 'var(--tl-text-primary)', marginBottom: '1.5rem', textAlign: 'left' }}>Risk Assessment</h6>
+                                <div className="flex-grow-1 d-flex flex-column justify-content-center">
                                     <ThreatGauge score={result.threat_score} />
                                 </div>
-                                <div className="col-sm-7">
-                                    <div className="d-flex align-items-center gap-2 mb-2">
-                                        <AlertTriangle size={16} color={result.is_suspicious ? 'var(--tl-danger)' : 'var(--tl-text-muted)'} />
-                                        <h6 style={{ fontSize: '0.8125rem', color: 'var(--tl-text-muted)', margin: 0 }}>Threat Analysis</h6>
+                                
+                                <div className="mt-4 p-3 rounded" style={{ background: 'var(--tl-bg-surface)', fontSize: '0.8125rem', color: 'var(--tl-text-secondary)', textAlign: 'left', lineHeight: 1.6 }}>
+                                    {result.summary}
+                                </div>
+                            </div>
+                        </div>
+
+                        {/* Extracted Content & Details */}
+                        <div className="col-12 col-xl-8 d-flex flex-column gap-4">
+                            
+                            {/* Threat Rules Panel */}
+                            {result.matched_rules && result.matched_rules.length > 0 && (
+                                <div className="tl-card p-4">
+                                    <div className="d-flex align-items-center gap-2 mb-3">
+                                        <ShieldAlert size={18} color="var(--tl-danger)" />
+                                        <h6 style={{ fontWeight: 600, color: 'var(--tl-text-primary)', margin: 0 }}>Threat Rules Triggered</h6>
                                     </div>
-                                    <p style={{ fontSize: '0.875rem', color: 'var(--tl-text-secondary)', lineHeight: 1.6, margin: 0 }}>
-                                        {result.ai_summary}
-                                    </p>
-                                    
-                                    <div className="mt-4">
-                                        <Button variant={result.is_suspicious ? "primary" : "secondary"} size="sm" icon={<ExternalLink size={14} />} disabled={result.is_suspicious}>
-                                            Proceed to Deep URL Scan
-                                        </Button>
+                                    <div className="d-flex flex-column gap-2">
+                                        {result.matched_rules.map((rule, i) => (
+                                            <div key={i} className="d-flex align-items-center gap-2 p-2 rounded" style={{ background: 'rgba(var(--tl-danger-rgb), 0.1)', color: 'var(--tl-danger)', fontSize: '0.8125rem' }}>
+                                                <XCircle size={14} />
+                                                <span>{rule}</span>
+                                            </div>
+                                        ))}
                                     </div>
                                 </div>
+                            )}
+
+                            {/* Safe View Panel */}
+                            <div className="tl-card p-4 flex-grow-1">
+                                <div className="d-flex justify-content-between align-items-center mb-4">
+                                    <div className="d-flex align-items-center gap-2">
+                                        {getIconForType(result.type)}
+                                        <h6 style={{ fontWeight: 600, color: 'var(--tl-text-primary)', margin: 0 }}>Decoded Payload ({result.type})</h6>
+                                    </div>
+                                    {canDeepInvestigate && (
+                                        <Button variant="primary" size="sm" onClick={handleDeepInvestigation}>
+                                            Launch Deep Investigation
+                                        </Button>
+                                    )}
+                                </div>
+                                
+                                <div className="p-4 rounded d-flex align-items-center" style={{ background: result.threat_score > 40 ? 'rgba(var(--tl-danger-rgb), 0.05)' : 'var(--tl-bg-surface)', border: `1px solid ${result.threat_score > 40 ? 'rgba(var(--tl-danger-rgb), 0.2)' : 'var(--tl-border)'}`, minHeight: '100px' }}>
+                                    <div style={{ fontFamily: 'var(--tl-font-mono)', fontSize: '0.875rem', color: 'var(--tl-text-primary)', wordBreak: 'break-all', whiteSpace: 'pre-wrap' }}>
+                                        {result.content}
+                                    </div>
+                                </div>
+                                
+                                {/* WiFi Specific Metadata Display */}
+                                {result.type === "WiFi" && result.metadata && (
+                                    <div className="row g-3 mt-4">
+                                        <div className="col-sm-4">
+                                            <div className="p-3 rounded" style={{ background: 'var(--tl-bg-surface)' }}>
+                                                <div style={{ fontSize: '0.75rem', color: 'var(--tl-text-faint)', textTransform: 'uppercase', marginBottom: 4 }}>SSID (Network Name)</div>
+                                                <div style={{ fontSize: '0.875rem', color: 'var(--tl-primary-light)', fontWeight: 500 }}>{result.metadata.ssid}</div>
+                                            </div>
+                                        </div>
+                                        <div className="col-sm-4">
+                                            <div className="p-3 rounded" style={{ background: 'var(--tl-bg-surface)' }}>
+                                                <div style={{ fontSize: '0.75rem', color: 'var(--tl-text-faint)', textTransform: 'uppercase', marginBottom: 4 }}>Authentication</div>
+                                                <div style={{ fontSize: '0.875rem', color: 'var(--tl-text-primary)', fontWeight: 500 }}>{result.metadata.auth}</div>
+                                            </div>
+                                        </div>
+                                        <div className="col-sm-4">
+                                            <div className="p-3 rounded" style={{ background: 'var(--tl-bg-surface)' }}>
+                                                <div style={{ fontSize: '0.75rem', color: 'var(--tl-text-faint)', textTransform: 'uppercase', marginBottom: 4 }}>Password Status</div>
+                                                <div style={{ fontSize: '0.875rem', color: result.metadata.has_password ? 'var(--tl-success)' : 'var(--tl-warning)', fontWeight: 500 }}>
+                                                    {result.metadata.has_password ? (result.metadata.password_hidden ? 'Hidden/Encrypted' : 'Visible in QR') : 'Open Network'}
+                                                </div>
+                                            </div>
+                                        </div>
+                                    </div>
+                                )}
                             </div>
                         </div>
                     </div>

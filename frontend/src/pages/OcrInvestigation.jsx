@@ -1,6 +1,7 @@
 import React, { useState, useRef } from 'react';
+import { useNavigate } from 'react-router-dom';
 import { motion } from 'framer-motion';
-import { Upload, Image as ImageIcon, CheckCircle, AlertTriangle, FileText, Download, Target } from 'lucide-react';
+import { Upload, FileText, AlertTriangle, Download, Scan, ShieldCheck, Database, Link as LinkIcon, Mail, PhoneCall, Code, Crosshair, Server } from 'lucide-react';
 import api from '../utils/axios';
 import { Button } from '../components/ui/Button';
 import { Badge } from '../components/ui/Badge';
@@ -38,11 +39,13 @@ const ThreatGauge = ({ score }) => {
 
 export default function OcrInvestigation() {
   const [file, setFile] = useState(null);
+  const [previewUrl, setPreviewUrl] = useState(null);
   const [dragActive, setDragActive] = useState(false);
   const [loading, setLoading] = useState(false);
   const [result, setResult] = useState(null);
   const [error, setError] = useState(null);
   const fileInputRef = useRef(null);
+  const navigate = useNavigate();
 
   const handleDrag = (e) => {
     e.preventDefault();
@@ -71,12 +74,12 @@ export default function OcrInvestigation() {
   };
   
   const handleFileSelection = (selectedFile) => {
-    // Only accept images
     if (!selectedFile.type.startsWith('image/')) {
         setError("Please upload a valid image file.");
         return;
     }
     setFile(selectedFile);
+    setPreviewUrl(URL.createObjectURL(selectedFile));
     setError(null);
     setResult(null);
   };
@@ -91,7 +94,6 @@ export default function OcrInvestigation() {
     formData.append("file", file);
     
     try {
-      // Set a generic content type header, axios handles multipart boundaries
       const res = await api.post('/api/v1/investigation/ocr', formData, {
           headers: { 'Content-Type': 'multipart/form-data' }
       });
@@ -102,186 +104,236 @@ export default function OcrInvestigation() {
       setLoading(false);
     }
   };
+
+  const handleInvestigate = (ioc) => {
+      if (ioc.type === 'URL') {
+          navigate('/investigations/url', { state: { target: ioc.value } });
+      } else if (ioc.type === 'Email') {
+          navigate('/investigations/email', { state: { target: ioc.value } });
+      } else if (ioc.type === 'Phone') {
+          navigate('/investigations/phone', { state: { target: ioc.value } });
+      }
+  };
   
-  // Highlight suspicious words in text
-  const renderHighlightedText = (text, suspiciousWords) => {
-      if (!suspiciousWords || suspiciousWords.length === 0) return <p>{text}</p>;
-      
-      let highlightedText = text;
-      // Very simple string replace for demo purposes. In a real app, use a proper regex with boundaries
-      suspiciousWords.forEach(word => {
-          const regex = new RegExp(`(${word})`, 'gi');
-          highlightedText = highlightedText.replace(regex, '<mark style="background: rgba(var(--tl-danger-rgb), 0.2); color: var(--tl-danger); padding: 0.125rem 0.25rem; border-radius: 4px; font-weight: 500;">$1</mark>');
-      });
-      
-      return <p dangerouslySetInnerHTML={{ __html: highlightedText }} />;
+  const getIocIcon = (type) => {
+      switch(type) {
+          case 'URL': return <LinkIcon size={14} />;
+          case 'Email': return <Mail size={14} />;
+          case 'Phone': return <PhoneCall size={14} />;
+          case 'IP': return <Server size={14} />;
+          case 'OTP': return <Code size={14} />;
+          case 'Crypto Wallet': return <Database size={14} />;
+          default: return <Scan size={14} />;
+      }
   };
 
   return (
     <div className="pb-5">
       <PageHeader 
-        title="OCR Investigation" 
-        subtitle="Extract text from screenshots and analyze it for phishing attempts and malicious intent."
+        title="OCR Investigation Engine" 
+        subtitle="Extract text and entities from images using EasyOCR, and perform deterministic threat analysis."
       />
 
-      {/* Upload Zone */}
-      <motion.div initial={{ opacity: 0, y: 10 }} animate={{ opacity: 1, y: 0 }} className="mb-5">
-        <div 
-            className={`tl-card p-5 text-center ${dragActive ? 'border-primary' : ''}`}
-            onDragEnter={handleDrag}
-            onDragLeave={handleDrag}
-            onDragOver={handleDrag}
-            onDrop={handleDrop}
-            style={{ 
-                borderStyle: 'dashed', 
-                borderWidth: '2px',
-                borderColor: dragActive ? 'var(--tl-primary)' : 'var(--tl-border)',
-                transition: 'all 0.2s ease'
-            }}
-        >
-            <input 
-                ref={fileInputRef}
-                type="file" 
-                accept="image/*" 
-                onChange={handleChange} 
-                style={{ display: 'none' }} 
-            />
-            
-            <div className="mx-auto mb-4" style={{ width: 64, height: 64, borderRadius: '50%', background: 'rgba(var(--tl-primary-rgb), 0.1)', color: 'var(--tl-primary-light)', display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
-                <ImageIcon size={32} />
-            </div>
-            
-            {file ? (
-                <>
-                    <h5 style={{ color: 'var(--tl-text-primary)', fontWeight: 600 }}>{file.name}</h5>
-                    <p style={{ color: 'var(--tl-text-muted)', fontSize: '0.875rem' }}>{(file.size / 1024).toFixed(2)} KB</p>
-                    <div className="d-flex justify-content-center gap-3 mt-4">
-                        <Button variant="ghost" onClick={() => { setFile(null); setResult(null); }}>Clear</Button>
-                        <Button onClick={handleSubmit} disabled={loading} icon={loading ? undefined : <Upload size={18} />}>
-                            {loading ? 'Processing...' : 'Analyze Image'}
-                        </Button>
-                    </div>
-                </>
-            ) : (
-                <>
-                    <h5 style={{ color: 'var(--tl-text-primary)', fontWeight: 600 }}>Drag & Drop an image here</h5>
-                    <p style={{ color: 'var(--tl-text-muted)', fontSize: '0.875rem' }}>or click to browse your files (PNG, JPG, WEBP)</p>
-                    <Button variant="secondary" className="mt-3" onClick={() => fileInputRef.current.click()}>
-                        Select File
-                    </Button>
-                </>
-            )}
-            
-            {error && <div className="mt-4 text-danger" style={{ fontSize: '0.875rem' }}>{error}</div>}
+      <div className="row g-4 mb-5">
+        <div className="col-12">
+            <motion.div initial={{ opacity: 0, y: 10 }} animate={{ opacity: 1, y: 0 }} className="h-100">
+                <div 
+                    className={`tl-card p-5 text-center d-flex flex-column justify-content-center ${dragActive ? 'border-primary' : ''}`}
+                    onDragEnter={handleDrag}
+                    onDragLeave={handleDrag}
+                    onDragOver={handleDrag}
+                    onDrop={handleDrop}
+                    style={{ 
+                        borderStyle: 'dashed', 
+                        borderWidth: '2px',
+                        borderColor: dragActive ? 'var(--tl-primary)' : 'var(--tl-border)',
+                        transition: 'all 0.2s ease',
+                        minHeight: '250px'
+                    }}
+                >
+                    <input 
+                        ref={fileInputRef}
+                        type="file" 
+                        accept="image/*" 
+                        onChange={handleChange} 
+                        style={{ display: 'none' }} 
+                    />
+                    
+                    {!file ? (
+                        <>
+                            <div className="mx-auto mb-4" style={{ width: 64, height: 64, borderRadius: '50%', background: 'rgba(var(--tl-primary-rgb), 0.1)', color: 'var(--tl-primary-light)', display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
+                                <Upload size={32} />
+                            </div>
+                            <h5 style={{ color: 'var(--tl-text-primary)', fontWeight: 600 }}>Upload Image for OCR</h5>
+                            <p style={{ color: 'var(--tl-text-muted)', fontSize: '0.875rem' }}>Drag & drop or browse (PNG, JPG, WEBP)</p>
+                            <Button variant="secondary" className="mt-3 mx-auto" onClick={() => fileInputRef.current.click()}>
+                                Select File
+                            </Button>
+                        </>
+                    ) : (
+                        <div className="d-flex flex-column align-items-center">
+                            <div style={{ height: 160, borderRadius: 'var(--tl-radius-md)', overflow: 'hidden', border: '1px solid var(--tl-border)', marginBottom: '1.5rem', background: 'var(--tl-bg-deep)' }}>
+                                <img src={previewUrl} alt="Preview" style={{ height: '100%', width: 'auto', objectFit: 'contain' }} />
+                            </div>
+                            <h6 style={{ color: 'var(--tl-text-primary)', fontWeight: 600 }}>{file.name}</h6>
+                            <p style={{ color: 'var(--tl-text-muted)', fontSize: '0.75rem' }}>{(file.size / 1024).toFixed(2)} KB</p>
+                            <div className="d-flex justify-content-center gap-3 mt-2">
+                                <Button variant="ghost" size="sm" onClick={() => { setFile(null); setPreviewUrl(null); setResult(null); }}>Clear</Button>
+                                <Button size="sm" onClick={handleSubmit} disabled={loading} icon={loading ? undefined : <Scan size={16} />}>
+                                    {loading ? 'Extracting Text...' : 'Run OCR Analysis'}
+                                </Button>
+                            </div>
+                        </div>
+                    )}
+                    
+                    {error && <div className="mt-4 text-danger" style={{ fontSize: '0.875rem' }}>{error}</div>}
+                </div>
+            </motion.div>
         </div>
-      </motion.div>
 
-      {/* Loading State */}
-      {loading && (
-        <motion.div initial={{ opacity: 0 }} animate={{ opacity: 1 }} className="row g-4">
-          <div className="col-lg-4">
-            <div className="tl-card p-4 h-100 d-flex flex-column gap-4">
-                <Skeleton h="100px" />
-                <Skeleton h="100px" />
-            </div>
-          </div>
-          <div className="col-lg-8">
-            <div className="tl-card p-4 h-100">
-              <Skeleton w="40%" h="24px" className="mb-4" />
-              <div className="d-flex flex-column gap-3">
-                <Skeleton w="100%" h="20px" />
-                <Skeleton w="90%" h="20px" />
-                <Skeleton w="95%" h="20px" />
-                <Skeleton w="80%" h="20px" />
-              </div>
-            </div>
-          </div>
-        </motion.div>
-      )}
-
-      {/* Results Dashboard */}
-      {result && (
-        <motion.div initial={{ opacity: 0, y: 10 }} animate={{ opacity: 1, y: 0 }}>
-          
-          <div className="d-flex justify-content-between align-items-center mb-4">
-              <h5 style={{ color: 'var(--tl-text-primary)', margin: 0, fontWeight: 600 }}>Analysis Results</h5>
-              <Button variant="secondary" size="sm" icon={<Download size={16} />}>Export Report</Button>
-          </div>
-            
-          <div className="row g-4">
-            
-            {/* Left Column: Metrics & Summary */}
-            <div className="col-12 col-xl-4 d-flex flex-column gap-4">
-                
-              {/* Threat Score Card */}
-              <div className="tl-card p-4 d-flex flex-column align-items-center text-center">
-                <h6 style={{ fontWeight: 600, color: 'var(--tl-text-primary)', marginBottom: '1.5rem', width: '100%', textAlign: 'left' }}>Risk Assessment</h6>
-                <ThreatGauge score={result.threat_score} />
-              </div>
-              
-              {/* OCR Confidence */}
-              <div className="tl-card p-4">
-                  <div className="d-flex justify-content-between align-items-center mb-2">
-                      <h6 style={{ fontWeight: 600, color: 'var(--tl-text-primary)', margin: 0 }}>OCR Confidence</h6>
-                      <Target size={18} color="var(--tl-primary-light)" />
-                  </div>
-                  <div style={{ fontSize: '1.75rem', fontWeight: 700, color: 'var(--tl-text-primary)' }}>
-                      {result.confidence_score}%
-                  </div>
-                  <p style={{ fontSize: '0.8125rem', color: 'var(--tl-text-muted)', margin: 0, marginTop: '0.5rem' }}>
-                      High confidence in text extraction accuracy.
-                  </p>
-              </div>
-              
-              {/* AI Summary */}
-              <div className="tl-card p-4 flex-grow-1">
-                  <h6 style={{ fontWeight: 600, color: 'var(--tl-text-primary)', marginBottom: '1rem' }}>AI Summary</h6>
-                  <p style={{ fontSize: '0.875rem', color: 'var(--tl-text-secondary)', lineHeight: 1.6 }}>
-                      {result.ai_summary}
-                  </p>
-              </div>
-
-            </div>
-
-            {/* Right Column: Extracted Text */}
-            <div className="col-12 col-xl-8">
-              <div className="tl-card d-flex flex-column h-100">
-                <div className="px-4 py-3 border-bottom d-flex justify-content-between align-items-center" style={{ borderColor: 'var(--tl-border)' }}>
-                    <div style={{ fontWeight: 600, color: 'var(--tl-text-primary)' }}>Extracted Text</div>
-                    <Badge variant={result.suspicious_words.length > 0 ? "danger" : "success"}>
-                        {result.suspicious_words.length} Keywords Flagged
-                    </Badge>
-                </div>
-                
-                <div className="p-4 flex-grow-1" style={{ 
-                    background: 'rgba(var(--tl-bg-deep-rgb), 0.5)', 
-                    fontFamily: 'var(--tl-font-mono)', 
-                    fontSize: '0.875rem',
-                    color: 'var(--tl-text-primary)',
-                    lineHeight: 1.8,
-                    whiteSpace: 'pre-wrap'
-                }}>
-                    {renderHighlightedText(result.extracted_text, result.suspicious_words)}
-                </div>
-                
-                {result.suspicious_words.length > 0 && (
-                    <div className="p-4 border-top" style={{ borderColor: 'var(--tl-border)', background: 'rgba(148,163,184,0.02)' }}>
-                        <h6 style={{ fontSize: '0.8125rem', color: 'var(--tl-text-muted)', marginBottom: '1rem' }}>Flagged Indicators</h6>
-                        <div className="d-flex flex-wrap gap-2">
-                            {result.suspicious_words.map((word, i) => (
-                                <span key={i} className="tl-badge" style={{ background: 'rgba(var(--tl-danger-rgb), 0.1)', color: 'var(--tl-danger)' }}>
-                                    {word}
-                                </span>
-                            ))}
+        {/* Loading State */}
+        {loading && (
+            <div className="col-12">
+                <motion.div initial={{ opacity: 0 }} animate={{ opacity: 1 }} className="row g-4">
+                    <div className="col-md-4">
+                        <div className="tl-card p-4 h-100 d-flex flex-column gap-3">
+                            <Skeleton h="20px" w="40%" />
+                            <Skeleton h="100px" />
                         </div>
                     </div>
-                )}
-              </div>
+                    <div className="col-md-8">
+                        <div className="tl-card p-4 h-100 d-flex flex-column gap-3">
+                            <Skeleton h="20px" w="30%" />
+                            <Skeleton h="40px" />
+                            <Skeleton h="40px" />
+                            <Skeleton h="40px" />
+                        </div>
+                    </div>
+                </motion.div>
             </div>
-          </div>
-          
-        </motion.div>
-      )}
+        )}
+
+        {/* Results Dashboard */}
+        {result && (
+            <div className="col-12">
+                <motion.div initial={{ opacity: 0, y: 10 }} animate={{ opacity: 1, y: 0 }}>
+                    
+                    <div className="row g-4 mb-4">
+                        
+                        {/* Threat Score & Summary */}
+                        <div className="col-12 col-xl-4 d-flex flex-column gap-4">
+                            <div className="tl-card p-4 text-center">
+                                <h6 style={{ fontWeight: 600, color: 'var(--tl-text-primary)', marginBottom: '1.5rem', textAlign: 'left' }}>Risk Assessment</h6>
+                                <ThreatGauge score={result.threat_score} />
+                                
+                                <div className="mt-4 p-3 rounded d-flex flex-column align-items-center" style={{ background: 'var(--tl-bg-surface)', border: '1px solid var(--tl-border)' }}>
+                                    <div style={{ fontSize: '0.75rem', color: 'var(--tl-text-faint)', textTransform: 'uppercase', marginBottom: 4 }}>OCR Confidence</div>
+                                    <div style={{ fontSize: '1.25rem', color: 'var(--tl-primary-light)', fontWeight: 600 }}>{result.confidence_score}%</div>
+                                </div>
+                            </div>
+                            
+                            {/* Threat Rules Triggered */}
+                            <div className="tl-card p-4 flex-grow-1">
+                                <div className="d-flex align-items-center gap-2 mb-3">
+                                    <AlertTriangle size={18} color="var(--tl-danger)" />
+                                    <h6 style={{ fontWeight: 600, color: 'var(--tl-text-primary)', margin: 0 }}>Threat Rules Triggered</h6>
+                                </div>
+                                {result.matched_rules && result.matched_rules.length > 0 ? (
+                                    <div className="d-flex flex-wrap gap-2">
+                                        {result.matched_rules.map((rule, i) => (
+                                            <Badge key={i} variant="danger">{rule}</Badge>
+                                        ))}
+                                    </div>
+                                ) : (
+                                    <div className="d-flex align-items-center gap-2 p-2 rounded" style={{ background: 'rgba(var(--tl-success-rgb), 0.1)', color: 'var(--tl-success)', fontSize: '0.8125rem' }}>
+                                        <ShieldCheck size={14} />
+                                        <span>No high-risk keywords detected in text.</span>
+                                    </div>
+                                )}
+                                
+                                <div className="mt-4 p-3 rounded" style={{ background: 'rgba(var(--tl-primary-rgb), 0.1)', fontSize: '0.8125rem', color: 'var(--tl-primary-light)', textAlign: 'left', lineHeight: 1.6, border: '1px solid rgba(var(--tl-primary-rgb), 0.2)' }}>
+                                    {result.summary}
+                                </div>
+                            </div>
+                        </div>
+
+                        {/* Evidence Panels */}
+                        <div className="col-12 col-xl-8 d-flex flex-column gap-4">
+                            
+                            {/* Extracted IOCs */}
+                            <div className="tl-card p-4 flex-grow-1">
+                                <div className="d-flex align-items-center gap-2 mb-4">
+                                    <Crosshair size={18} color="var(--tl-primary-light)" />
+                                    <h6 style={{ fontWeight: 600, color: 'var(--tl-text-primary)', margin: 0 }}>Extracted Entities (IOCs)</h6>
+                                </div>
+                                
+                                {result.iocs && result.iocs.length > 0 ? (
+                                    <div className="table-responsive">
+                                        <table className="table table-dark table-hover mb-0" style={{ background: 'transparent' }}>
+                                            <thead>
+                                                <tr>
+                                                    <th style={{ color: 'var(--tl-text-muted)', borderBottom: '1px solid var(--tl-border)' }}>Entity Type</th>
+                                                    <th style={{ color: 'var(--tl-text-muted)', borderBottom: '1px solid var(--tl-border)' }}>Value</th>
+                                                    <th style={{ color: 'var(--tl-text-muted)', borderBottom: '1px solid var(--tl-border)', textAlign: 'right' }}>Action</th>
+                                                </tr>
+                                            </thead>
+                                            <tbody>
+                                                {result.iocs.map((ioc, i) => (
+                                                    <tr key={i} style={{ verticalAlign: 'middle' }}>
+                                                        <td style={{ borderColor: 'var(--tl-border)', color: 'var(--tl-text-primary)' }}>
+                                                            <div className="d-flex align-items-center gap-2">
+                                                                <span style={{ color: 'var(--tl-text-muted)' }}>{getIocIcon(ioc.type)}</span>
+                                                                <span>{ioc.type}</span>
+                                                            </div>
+                                                        </td>
+                                                        <td style={{ borderColor: 'var(--tl-border)', fontFamily: 'var(--tl-font-mono)', color: 'var(--tl-primary-light)' }}>
+                                                            {ioc.value}
+                                                        </td>
+                                                        <td style={{ borderColor: 'var(--tl-border)', textAlign: 'right' }}>
+                                                            {['URL', 'Email', 'Phone'].includes(ioc.type) ? (
+                                                                <Button variant="outline" size="sm" onClick={() => handleInvestigate(ioc)}>
+                                                                    Investigate
+                                                                </Button>
+                                                            ) : (
+                                                                <span style={{ fontSize: '0.75rem', color: 'var(--tl-text-faint)' }}>Recorded</span>
+                                                            )}
+                                                        </td>
+                                                    </tr>
+                                                ))}
+                                            </tbody>
+                                        </table>
+                                    </div>
+                                ) : (
+                                    <div className="p-4 text-center rounded" style={{ background: 'var(--tl-bg-surface)', color: 'var(--tl-text-muted)', fontSize: '0.875rem' }}>
+                                        No identifiable entities (URLs, Emails, Phones, Crypto, IPs, OTPs) were extracted from the text.
+                                    </div>
+                                )}
+                            </div>
+                            
+                            {/* Raw Extracted Text */}
+                            <div className="tl-card p-4">
+                                <div className="d-flex align-items-center gap-2 mb-3">
+                                    <FileText size={18} color="var(--tl-text-muted)" />
+                                    <h6 style={{ fontWeight: 600, color: 'var(--tl-text-primary)', margin: 0 }}>Raw Extracted Text</h6>
+                                </div>
+                                <div className="p-3 rounded" style={{ background: 'var(--tl-bg-surface)', border: '1px solid var(--tl-border)', maxHeight: '300px', overflowY: 'auto' }}>
+                                    {result.extracted_text ? (
+                                        <div style={{ fontFamily: 'var(--tl-font-mono)', fontSize: '0.875rem', color: 'var(--tl-text-primary)', whiteSpace: 'pre-wrap' }}>
+                                            {result.extracted_text}
+                                        </div>
+                                    ) : (
+                                        <span style={{ color: 'var(--tl-text-muted)', fontStyle: 'italic' }}>No text detected in image.</span>
+                                    )}
+                                </div>
+                            </div>
+
+                        </div>
+                    </div>
+                    
+                </motion.div>
+            </div>
+        )}
+      </div>
     </div>
   );
 }

@@ -1,4 +1,5 @@
 import React, { useState } from 'react';
+import { useLocation } from 'react-router-dom';
 import { motion, AnimatePresence } from 'framer-motion';
 import { Search, Globe, ShieldAlert, Activity, FileText, ChevronRight, CheckCircle, AlertTriangle, XCircle, Link as LinkIcon, Database, Clock } from 'lucide-react';
 import api from '../utils/axios';
@@ -39,7 +40,8 @@ const ThreatGauge = ({ score }) => {
 };
 
 export default function UrlInvestigation() {
-  const [url, setUrl] = useState('');
+  const location = useLocation();
+  const [url, setUrl] = useState(location.state?.target || '');
   const [loading, setLoading] = useState(false);
   const [result, setResult] = useState(null);
   const [error, setError] = useState(null);

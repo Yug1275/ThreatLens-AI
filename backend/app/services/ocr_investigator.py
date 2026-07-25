@@ -1,55 +1,126 @@
-import random
+import re
+import math
+from typing import Dict, Any, List
 
 class OCRInvestigatorService:
-    @staticmethod
-    def analyze(filename: str, filesize: int) -> dict:
-        """
-        Mocks the OCR extraction and analysis.
-        Since we don't do real OCR in Phase 4B, we return mock text, 
-        highlighted words, and an AI summary.
-        """
+    _reader = None
+
+    @classmethod
+    def get_reader(cls):
+        if cls._reader is None:
+            import easyocr
+            # We initialize EasyOCR for English only
+            # It will download weights on first run to ~/.EasyOCR/model if not present
+            cls._reader = easyocr.Reader(['en'])
+        return cls._reader
+
+    @classmethod
+    def analyze(cls, file_bytes: bytes) -> Dict[str, Any]:
+        reader = cls.get_reader()
         
-        is_suspicious = "malicious" in filename.lower() or "phishing" in filename.lower()
+        # EasyOCR can directly read from bytes
+        results = reader.readtext(file_bytes)
         
-        if is_suspicious:
-            extracted_text = (
-                "URGENT: Your account has been temporarily locked due to suspicious activity. "
-                "Please click here immediately to verify your identity and restore access. "
-                "Failure to act within 24 hours will result in permanent account deletion. "
-                "Contact our support at admin@secure-login-update.com for help."
-            )
-            suspicious_words = ["URGENT", "locked", "suspicious", "click here immediately", "verify your identity", "permanent account deletion", "admin@secure-login-update.com"]
-            ai_summary = (
-                "The extracted text exhibits multiple classic signs of a phishing attempt, "
-                "including a false sense of urgency ('URGENT', '24 hours'), threats of negative "
-                "consequences ('permanent account deletion'), and a request to click a link to verify identity. "
-                "The email address provided is likely illegitimate."
-            )
-            threat_score = random.randint(85, 98)
-            confidence = 94.2
-        else:
-            extracted_text = (
-                "Invoice #49281\n"
-                "Date: Oct 12, 2026\n"
-                "To: John Doe\n"
-                "Amount Due: $150.00\n"
-                "Please remit payment by Oct 26, 2026. Thank you for your business."
-            )
-            suspicious_words = []
-            ai_summary = (
-                "The extracted text appears to be a standard invoice. It contains typical billing "
-                "information such as an invoice number, dates, and amounts. No common social engineering "
-                "tactics or malicious indicators were detected."
-            )
-            threat_score = random.randint(5, 15)
-            confidence = 98.7
+        # results is a list of tuples: (bbox, text, prob)
+        extracted_text = []
+        total_prob = 0
+        count = 0
+        
+        for bbox, text, prob in results:
+            extracted_text.append(text)
+            total_prob += prob
+            count += 1
             
+        full_text = " ".join(extracted_text)
+        avg_confidence = (total_prob / count) if count > 0 else 0
+        
+        # Entity Extraction
+        iocs = cls._extract_entities(full_text)
+        
+        # Rule-based Threat Detection
+        threat_score, matched_rules = cls._detect_threats(full_text)
+        
+        # Threat score adjustments based on IOCs
+        if any(ioc["type"] == "URL" for ioc in iocs):
+            threat_score += 15
+        if any(ioc["type"] == "Crypto Wallet" for ioc in iocs):
+            threat_score += 30
+            
+        # Cap score
+        threat_score = min(threat_score, 99)
+        
         return {
-            "filename": filename,
-            "filesize_bytes": filesize,
-            "extracted_text": extracted_text,
-            "suspicious_words": suspicious_words,
-            "ai_summary": ai_summary,
+            "extracted_text": full_text,
+            "confidence_score": round(avg_confidence * 100, 2),
             "threat_score": threat_score,
-            "confidence_score": confidence
+            "matched_rules": matched_rules,
+            "iocs": iocs,
+            "summary": "AI Investigation Summary will be available in Phase 9."
         }
+        
+    @staticmethod
+    def _extract_entities(text: str) -> List[Dict[str, str]]:
+        iocs = []
+        
+        # URLs
+        url_pattern = r'https?://(?:[-\w.]|(?:%[\da-fA-F]{2}))+'
+        urls = set(re.findall(url_pattern, text))
+        for u in urls:
+            iocs.append({"type": "URL", "value": u})
+            
+        # Emails
+        email_pattern = r'[a-zA-Z0-9_.+-]+@[a-zA-Z0-9-]+\.[a-zA-Z0-9-.]+'
+        emails = set(re.findall(email_pattern, text))
+        for e in emails:
+            iocs.append({"type": "Email", "value": e})
+            
+        # Phones (Basic international/US format approximation)
+        phone_pattern = r'(?:\+?\d{1,3}[-.\s]?)?\(?\d{3}\)?[-.\s]?\d{3}[-.\s]?\d{4}'
+        phones = set(re.findall(phone_pattern, text))
+        for p in phones:
+            iocs.append({"type": "Phone", "value": p})
+            
+        # Crypto Wallets (BTC, ETH approximations)
+        btc_pattern = r'\b[13][a-km-zA-HJ-NP-Z1-9]{25,34}\b'
+        eth_pattern = r'\b0x[a-fA-F0-9]{40}\b'
+        for b in set(re.findall(btc_pattern, text)):
+            iocs.append({"type": "Crypto Wallet", "value": b})
+        for e in set(re.findall(eth_pattern, text)):
+            iocs.append({"type": "Crypto Wallet", "value": e})
+            
+        # IPv4
+        ip_pattern = r'\b(?:\d{1,3}\.){3}\d{1,3}\b'
+        ips = set(re.findall(ip_pattern, text))
+        for ip in ips:
+            iocs.append({"type": "IP", "value": ip})
+            
+        # OTP codes (look for 6 digit codes near "code", "otp")
+        if "code" in text.lower() or "otp" in text.lower():
+            otp_pattern = r'\b\d{6}\b'
+            otps = set(re.findall(otp_pattern, text))
+            for otp in otps:
+                iocs.append({"type": "OTP", "value": otp})
+                
+        return iocs
+        
+    @staticmethod
+    def _detect_threats(text: str):
+        lower_text = text.lower()
+        score = 5 # base score
+        matched_rules = []
+        
+        rules = {
+            "Urgent Language": (["urgent", "immediate", "action required", "suspended", "expire"], 15),
+            "Credential Request": (["password", "login", "credentials", "sign in", "verify your account"], 25),
+            "Banking Terminology": (["bank", "account", "transaction", "payment", "invoice", "billing"], 10),
+            "Brand Impersonation": (["paypal", "netflix", "amazon", "apple", "microsoft", "google"], 20),
+            "Cryptocurrency Scams": (["bitcoin", "btc", "wallet", "seed phrase", "eth", "crypto"], 30),
+            "Giveaway Scams": (["winner", "giveaway", "prize", "claim", "lottery", "free"], 20)
+        }
+        
+        for rule_name, (keywords, weight) in rules.items():
+            if any(kw in lower_text for kw in keywords):
+                score += weight
+                matched_rules.append(rule_name)
+                
+        return score, matched_rules
