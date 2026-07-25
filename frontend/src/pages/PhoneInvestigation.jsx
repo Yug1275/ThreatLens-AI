@@ -1,7 +1,7 @@
 import React, { useState } from 'react';
 import { useLocation } from 'react-router-dom';
 import { motion } from 'framer-motion';
-import { PhoneCall, Search, AlertTriangle, ShieldCheck, Download, MapPin, Signal, Activity, AlertCircle } from 'lucide-react';
+import { PhoneCall, Search, AlertTriangle, ShieldCheck, Download, MapPin, Signal, Activity, AlertCircle, Clock, ShieldAlert, CheckCircle, XCircle } from 'lucide-react';
 import api from '../utils/axios';
 import { Button } from '../components/ui/Button';
 import { Badge } from '../components/ui/Badge';
@@ -11,8 +11,10 @@ import { PageHeader } from '../components/ui/PageHeader';
 const ThreatGauge = ({ score }) => {
   let color = 'var(--tl-success)';
   let label = 'Safe';
-  if (score > 40) { color = 'var(--tl-warning)'; label = 'Suspicious'; }
-  if (score > 75) { color = 'var(--tl-danger)'; label = 'Malicious'; }
+  if (score > 20) { color = 'var(--tl-primary-light)'; label = 'Low Risk'; }
+  if (score > 40) { color = 'var(--tl-warning)'; label = 'Medium Risk'; }
+  if (score > 60) { color = 'var(--tl-danger)'; label = 'High Risk'; }
+  if (score > 80) { color = '#ef4444'; label = 'Critical'; }
 
   return (
     <div className="d-flex flex-column align-items-center">
@@ -30,7 +32,7 @@ const ThreatGauge = ({ score }) => {
           <div style={{ fontSize: '1.75rem', fontWeight: 700, color: 'var(--tl-text-primary)', lineHeight: 1 }}>{score}</div>
         </div>
       </div>
-      <Badge variant={score > 75 ? 'danger' : score > 40 ? 'warning' : 'success'} className="mt-3">
+      <Badge variant={score > 60 ? 'danger' : score > 40 ? 'warning' : 'success'} className="mt-3">
         {label}
       </Badge>
     </div>
@@ -47,6 +49,7 @@ export default function PhoneInvestigation() {
   const handleSubmit = async (e) => {
     e.preventDefault();
     if (!phoneNumber.trim()) return;
+    
     setLoading(true);
     setError(null);
     setResult(null);
@@ -64,167 +67,208 @@ export default function PhoneInvestigation() {
   return (
     <div className="pb-5">
       <PageHeader 
-        title="Phone Investigation" 
-        subtitle="Analyze phone numbers to uncover origin, carrier information, and associated spam or fraud reputation."
+        title="Phone Investigation Engine" 
+        subtitle="Validate and parse international numbers, identify carriers, and perform deterministic threat analysis."
       />
 
-      <motion.div initial={{ opacity: 0, y: 10 }} animate={{ opacity: 1, y: 0 }} className="mb-5">
-        <form onSubmit={handleSubmit} className="tl-card p-4 d-flex flex-column flex-md-row gap-3">
-          <div className="flex-grow-1" style={{ position: 'relative' }}>
-            <PhoneCall size={20} style={{ position: 'absolute', left: 16, top: '50%', transform: 'translateY(-50%)', color: 'var(--tl-text-muted)' }} />
-            <input 
-              type="tel" 
-              className="tl-input w-100" 
-              placeholder="+1 (555) 019-8472" 
-              value={phoneNumber}
-              onChange={(e) => setPhoneNumber(e.target.value)}
-              style={{ paddingLeft: '3rem', height: 48, fontSize: '1rem' }}
-              required
-            />
-          </div>
-          <Button type="submit" size="lg" disabled={loading} icon={loading ? undefined : <Search size={18} />}>
-            {loading ? 'Analyzing...' : 'Analyze Number'}
-          </Button>
-        </form>
-        {error && <div className="mt-3 text-danger" style={{ fontSize: '0.875rem' }}>{error}</div>}
-      </motion.div>
-
-      {/* Loading State */}
-      {loading && (
-        <motion.div initial={{ opacity: 0 }} animate={{ opacity: 1 }} className="row g-4">
-          <div className="col-12 col-lg-4">
-            <div className="tl-card p-4 h-100 d-flex flex-column align-items-center gap-4">
-              <Skeleton w="100px" h="100px" r />
-              <Skeleton w="60%" h="20px" />
-            </div>
-          </div>
-          <div className="col-12 col-lg-8">
-            <div className="tl-card p-4 h-100 d-flex flex-column gap-3">
-              <Skeleton w="30%" h="24px" className="mb-4" />
-              <div className="row g-3">
-                  <div className="col-md-6"><Skeleton h="60px" /></div>
-                  <div className="col-md-6"><Skeleton h="60px" /></div>
-                  <div className="col-md-6"><Skeleton h="60px" /></div>
-                  <div className="col-md-6"><Skeleton h="60px" /></div>
-              </div>
-            </div>
-          </div>
-        </motion.div>
-      )}
-
-      {/* Results Dashboard */}
-      {result && (
-        <motion.div initial={{ opacity: 0, y: 10 }} animate={{ opacity: 1, y: 0 }}>
-          <div className="d-flex justify-content-between align-items-center mb-4">
-              <h5 style={{ color: 'var(--tl-text-primary)', margin: 0, fontWeight: 600 }}>Investigation Report</h5>
-              <Button variant="secondary" size="sm" icon={<Download size={16} />}>Export Report</Button>
-          </div>
-          
-          <div className="row g-4">
-            
-            {/* Risk Assessment */}
-            <div className="col-12 col-xl-4 d-flex flex-column gap-4">
-              <div className="tl-card p-4 text-center h-100 d-flex flex-column">
-                <h6 style={{ fontWeight: 600, color: 'var(--tl-text-primary)', marginBottom: '1.5rem', textAlign: 'left' }}>Risk Assessment</h6>
-                <div className="flex-grow-1 d-flex flex-column justify-content-center align-items-center">
-                    <ThreatGauge score={result.threat_score} />
-                </div>
-                
-                {/* AI Summary */}
-                <div className="mt-4 p-3 rounded" style={{ background: 'var(--tl-bg-surface)', fontSize: '0.8125rem', color: 'var(--tl-text-secondary)', textAlign: 'left', lineHeight: 1.6 }}>
-                    {result.summary}
-                </div>
-              </div>
-            </div>
-
-            {/* Evidence Panels */}
-            <div className="col-12 col-xl-8">
-                <div className="row g-4 h-100">
-                    
-                    {/* Location Panel */}
-                    <div className="col-md-6">
-                        <div className="tl-card p-4 h-100">
-                            <div className="d-flex align-items-center gap-2 mb-4">
-                                <MapPin size={20} color="var(--tl-primary-light)" />
-                                <h6 style={{ fontWeight: 600, color: 'var(--tl-text-primary)', margin: 0 }}>Origin Location</h6>
+      <div className="row g-4 mb-5">
+        <div className="col-12">
+            <motion.div initial={{ opacity: 0, y: 10 }} animate={{ opacity: 1, y: 0 }} className="tl-card p-4">
+                <form onSubmit={handleSubmit}>
+                    <div className="row g-3">
+                        <div className="col-md-9">
+                            <label style={{ fontSize: '0.8125rem', color: 'var(--tl-text-muted)', marginBottom: 4 }}>Phone Number</label>
+                            <div className="position-relative">
+                                <div className="position-absolute top-50 translate-middle-y" style={{ left: '1rem', color: 'var(--tl-text-muted)' }}>
+                                    <PhoneCall size={18} />
+                                </div>
+                                <input 
+                                    type="text" 
+                                    className="tl-input w-100" 
+                                    placeholder="+1 415-555-2671 or +91 9876543210" 
+                                    style={{ paddingLeft: '2.75rem', fontFamily: 'var(--tl-font-mono)' }}
+                                    value={phoneNumber}
+                                    onChange={(e) => setPhoneNumber(e.target.value)}
+                                />
                             </div>
-                            <div className="d-flex flex-column gap-3">
-                                <div>
-                                    <div style={{ fontSize: '0.75rem', color: 'var(--tl-text-faint)', textTransform: 'uppercase', marginBottom: 4 }}>Country</div>
-                                    <div style={{ fontSize: '1rem', color: 'var(--tl-text-primary)', fontWeight: 500 }}>{result.location.country}</div>
-                                </div>
-                                <div className="p-3 rounded mt-2" style={{ background: 'var(--tl-bg-surface)' }}>
-                                    <div style={{ fontSize: '0.75rem', color: 'var(--tl-text-faint)', textTransform: 'uppercase', marginBottom: 4 }}>Registered City / Region</div>
-                                    <div style={{ fontSize: '0.875rem', color: 'var(--tl-text-primary)', fontWeight: 500 }}>{result.location.city}</div>
-                                </div>
+                            <div className="mt-2" style={{ fontSize: '0.75rem', color: 'var(--tl-text-faint)' }}>
+                                Include country code (+) for best results. Supports spaces, dashes, and brackets.
                             </div>
                         </div>
+                        <div className="col-md-3 d-flex align-items-end pb-4">
+                            <Button type="submit" disabled={!phoneNumber || loading} className="w-100" icon={loading ? undefined : <Search size={16} />}>
+                                {loading ? 'Analyzing...' : 'Investigate Phone'}
+                            </Button>
+                        </div>
+                    </div>
+                </form>
+                {error && <div className="mt-3 text-danger d-flex align-items-center gap-2" style={{ fontSize: '0.875rem' }}><AlertCircle size={16}/>{error}</div>}
+            </motion.div>
+        </div>
+
+        {/* Loading State */}
+        {loading && (
+            <div className="col-12">
+                <motion.div initial={{ opacity: 0 }} animate={{ opacity: 1 }} className="row g-4">
+                    <div className="col-md-4">
+                        <div className="tl-card p-4 h-100 d-flex flex-column gap-3">
+                            <Skeleton h="20px" w="40%" />
+                            <Skeleton h="100px" />
+                        </div>
+                    </div>
+                    <div className="col-md-8">
+                        <div className="tl-card p-4 h-100 d-flex flex-column gap-3">
+                            <Skeleton h="20px" w="30%" />
+                            <Skeleton h="40px" />
+                            <Skeleton h="40px" />
+                            <Skeleton h="40px" />
+                        </div>
+                    </div>
+                </motion.div>
+            </div>
+        )}
+
+        {/* Results Dashboard */}
+        {result && (
+            <div className="col-12">
+                <motion.div initial={{ opacity: 0, y: 10 }} animate={{ opacity: 1, y: 0 }}>
+                    <div className="d-flex justify-content-between align-items-center mb-4">
+                        <h5 style={{ color: 'var(--tl-text-primary)', margin: 0, fontWeight: 600 }}>Investigation Report</h5>
+                        <Button variant="secondary" size="sm" icon={<Download size={16} />}>Export Report</Button>
                     </div>
                     
-                    {/* Technical / Carrier Panel */}
-                    <div className="col-md-6">
-                        <div className="tl-card p-4 h-100">
-                            <div className="d-flex align-items-center gap-2 mb-4">
-                                <Signal size={20} color="var(--tl-primary-light)" />
-                                <h6 style={{ fontWeight: 600, color: 'var(--tl-text-primary)', margin: 0 }}>Technical Details</h6>
-                            </div>
-                            <div className="d-flex flex-column gap-3">
-                                <div>
-                                    <div style={{ fontSize: '0.75rem', color: 'var(--tl-text-faint)', textTransform: 'uppercase', marginBottom: 4 }}>Carrier</div>
-                                    <div style={{ fontSize: '1rem', color: 'var(--tl-text-primary)', fontWeight: 500 }}>{result.carrier_info.name}</div>
+                    <div className="row g-4 mb-4">
+                        
+                        {/* Threat Score & Summary */}
+                        <div className="col-12 col-xl-4 d-flex flex-column gap-4">
+                            <div className="tl-card p-4 text-center">
+                                <h6 style={{ fontWeight: 600, color: 'var(--tl-text-primary)', marginBottom: '1.5rem', textAlign: 'left' }}>Risk Assessment</h6>
+                                <ThreatGauge score={result.threat_score} />
+                                <div className="mt-4 p-3 rounded" style={{ background: 'var(--tl-bg-surface)', fontSize: '0.8125rem', color: 'var(--tl-text-secondary)', textAlign: 'left', lineHeight: 1.6 }}>
+                                    {result.summary}
                                 </div>
-                                <div className="row g-2 mt-2">
-                                    <div className="col-6">
-                                        <div className="p-2 rounded h-100" style={{ background: 'var(--tl-bg-surface)' }}>
-                                            <div style={{ fontSize: '0.6875rem', color: 'var(--tl-text-faint)', textTransform: 'uppercase' }}>Line Type</div>
-                                            <div style={{ fontSize: '0.875rem', color: 'var(--tl-text-primary)', fontWeight: 500 }}>
-                                                {result.carrier_info.line_type}
-                                                {result.carrier_info.line_type === 'VoIP' && <AlertTriangle size={12} color="var(--tl-warning)" className="ms-1 mb-1" />}
+                            </div>
+                            
+                            {/* Threat Indicators */}
+                            <div className="tl-card p-4 flex-grow-1">
+                                <div className="d-flex align-items-center gap-2 mb-3">
+                                    <ShieldAlert size={18} color={result.indicators.length > 0 ? "var(--tl-warning)" : "var(--tl-success)"} />
+                                    <h6 style={{ fontWeight: 600, color: 'var(--tl-text-primary)', margin: 0 }}>Detected Indicators</h6>
+                                </div>
+                                {result.indicators.length > 0 ? (
+                                    <div className="d-flex flex-column gap-2">
+                                        {result.indicators.map((ind, i) => (
+                                            <div key={i} className="d-flex align-items-center gap-2 p-2 rounded" style={{ background: 'rgba(var(--tl-warning-rgb), 0.1)', color: 'var(--tl-warning)', fontSize: '0.8125rem' }}>
+                                                <AlertTriangle size={14} />
+                                                <span>{ind}</span>
+                                            </div>
+                                        ))}
+                                    </div>
+                                ) : (
+                                    <div className="d-flex align-items-center gap-2 p-2 rounded" style={{ background: 'rgba(var(--tl-success-rgb), 0.1)', color: 'var(--tl-success)', fontSize: '0.8125rem' }}>
+                                        <CheckCircle size={14} />
+                                        <span>No high-risk indicators detected.</span>
+                                    </div>
+                                )}
+                            </div>
+                        </div>
+
+                        {/* Evidence Panels */}
+                        <div className="col-12 col-xl-8 d-flex flex-column gap-4">
+                            
+                            {/* Phone Information */}
+                            <div className="tl-card p-4">
+                                <h6 style={{ fontWeight: 600, color: 'var(--tl-text-primary)', marginBottom: '1.5rem' }}>Phone Information</h6>
+                                <div className="row g-3">
+                                    <div className="col-md-6">
+                                        <div className="p-3 rounded d-flex align-items-center gap-3" style={{ background: 'var(--tl-bg-surface)' }}>
+                                            <div style={{ padding: 10, background: 'rgba(var(--tl-primary-rgb), 0.1)', borderRadius: 'var(--tl-radius-md)', color: 'var(--tl-primary-light)' }}>
+                                                <Activity size={20} />
+                                            </div>
+                                            <div>
+                                                <div style={{ fontSize: '0.75rem', color: 'var(--tl-text-faint)', textTransform: 'uppercase' }}>Number Type</div>
+                                                <div style={{ fontSize: '0.875rem', color: 'var(--tl-text-primary)', fontWeight: 500 }}>{result.phone_info.type}</div>
                                             </div>
                                         </div>
                                     </div>
-                                    <div className="col-6">
-                                        <div className="p-2 rounded h-100" style={{ background: 'var(--tl-bg-surface)' }}>
-                                            <div style={{ fontSize: '0.6875rem', color: 'var(--tl-text-faint)', textTransform: 'uppercase' }}>Format</div>
-                                            <div style={{ fontSize: '0.875rem', color: 'var(--tl-success)', fontWeight: 500 }}>{result.carrier_info.valid}</div>
+                                    <div className="col-md-6">
+                                        <div className="p-3 rounded d-flex align-items-center gap-3" style={{ background: 'var(--tl-bg-surface)' }}>
+                                            <div style={{ padding: 10, background: 'rgba(var(--tl-primary-rgb), 0.1)', borderRadius: 'var(--tl-radius-md)', color: 'var(--tl-primary-light)' }}>
+                                                <Signal size={20} />
+                                            </div>
+                                            <div>
+                                                <div style={{ fontSize: '0.75rem', color: 'var(--tl-text-faint)', textTransform: 'uppercase' }}>Carrier</div>
+                                                <div style={{ fontSize: '0.875rem', color: 'var(--tl-text-primary)', fontWeight: 500 }}>{result.phone_info.carrier}</div>
+                                            </div>
+                                        </div>
+                                    </div>
+                                    <div className="col-md-6">
+                                        <div className="p-3 rounded d-flex align-items-center gap-3" style={{ background: 'var(--tl-bg-surface)' }}>
+                                            <div style={{ padding: 10, background: 'rgba(var(--tl-primary-rgb), 0.1)', borderRadius: 'var(--tl-radius-md)', color: 'var(--tl-primary-light)' }}>
+                                                <MapPin size={20} />
+                                            </div>
+                                            <div>
+                                                <div style={{ fontSize: '0.75rem', color: 'var(--tl-text-faint)', textTransform: 'uppercase' }}>Geolocation</div>
+                                                <div style={{ fontSize: '0.875rem', color: 'var(--tl-text-primary)', fontWeight: 500 }}>{result.phone_info.country}</div>
+                                            </div>
+                                        </div>
+                                    </div>
+                                    <div className="col-md-6">
+                                        <div className="p-3 rounded d-flex align-items-center gap-3" style={{ background: 'var(--tl-bg-surface)' }}>
+                                            <div style={{ padding: 10, background: 'rgba(var(--tl-primary-rgb), 0.1)', borderRadius: 'var(--tl-radius-md)', color: 'var(--tl-primary-light)' }}>
+                                                <ShieldCheck size={20} />
+                                            </div>
+                                            <div>
+                                                <div style={{ fontSize: '0.75rem', color: 'var(--tl-text-faint)', textTransform: 'uppercase' }}>Format Validity</div>
+                                                <div style={{ fontSize: '0.875rem', color: 'var(--tl-success)', fontWeight: 500 }}>Valid Number</div>
+                                            </div>
                                         </div>
                                     </div>
                                 </div>
-                            </div>
-                        </div>
-                    </div>
-                    
-                    {/* Spam Reputation Panel */}
-                    <div className="col-12">
-                        <div className="tl-card p-4" style={{ borderLeft: `4px solid ${result.is_suspicious ? 'var(--tl-danger)' : 'var(--tl-success)'}` }}>
-                            <div className="d-flex flex-column flex-sm-row justify-content-between align-items-sm-center gap-3">
-                                <div>
-                                    <div className="d-flex align-items-center gap-2 mb-2">
-                                        <Activity size={20} color={result.is_suspicious ? "var(--tl-danger)" : "var(--tl-success)"} />
-                                        <h6 style={{ fontWeight: 600, color: 'var(--tl-text-primary)', margin: 0 }}>Spam & Fraud Reputation</h6>
+                                
+                                <div className="mt-4 p-3 rounded d-flex flex-column gap-3" style={{ border: '1px solid var(--tl-border)' }}>
+                                    <div className="d-flex justify-content-between align-items-center">
+                                        <span style={{ fontSize: '0.8125rem', color: 'var(--tl-text-muted)' }}>E.164 Format</span>
+                                        <span style={{ fontFamily: 'var(--tl-font-mono)', fontSize: '0.875rem', color: 'var(--tl-primary-light)' }}>{result.phone_info.e164}</span>
                                     </div>
-                                    <p style={{ fontSize: '0.875rem', color: 'var(--tl-text-secondary)', margin: 0 }}>
-                                        {result.is_suspicious 
-                                            ? "This number has been flagged in multiple community databases for telemarketing and spam."
-                                            : "No community reports or known malicious activity associated with this number."}
-                                    </p>
-                                </div>
-                                <div className="text-start text-sm-end flex-shrink-0">
-                                    <div style={{ fontSize: '0.75rem', color: 'var(--tl-text-faint)', textTransform: 'uppercase', marginBottom: 4 }}>Risk Level</div>
-                                    <Badge variant={result.is_suspicious ? "danger" : "success"} style={{ fontSize: '0.875rem', padding: '0.5rem 1rem' }}>
-                                        {result.spam_reputation}
-                                    </Badge>
+                                    <div className="d-flex justify-content-between align-items-center">
+                                        <span style={{ fontSize: '0.8125rem', color: 'var(--tl-text-muted)' }}>International Format</span>
+                                        <span style={{ fontFamily: 'var(--tl-font-mono)', fontSize: '0.875rem', color: 'var(--tl-text-primary)' }}>{result.phone_info.international}</span>
+                                    </div>
+                                    <div className="d-flex justify-content-between align-items-center">
+                                        <span style={{ fontSize: '0.8125rem', color: 'var(--tl-text-muted)' }}>National Format</span>
+                                        <span style={{ fontFamily: 'var(--tl-font-mono)', fontSize: '0.875rem', color: 'var(--tl-text-primary)' }}>{result.phone_info.national}</span>
+                                    </div>
                                 </div>
                             </div>
+                            
+                            {/* Investigation Timeline */}
+                            <div className="tl-card p-4">
+                                <div className="d-flex align-items-center gap-2 mb-4">
+                                    <Clock size={18} color="var(--tl-primary-light)" />
+                                    <h6 style={{ fontWeight: 600, color: 'var(--tl-text-primary)', margin: 0 }}>Investigation Timeline</h6>
+                                </div>
+                                
+                                <div className="position-relative" style={{ paddingLeft: 20 }}>
+                                    <div className="position-absolute" style={{ left: 5, top: 5, bottom: 5, width: 2, background: 'var(--tl-border)' }}></div>
+                                    
+                                    {result.timeline && result.timeline.map((event, index) => (
+                                        <div key={index} className="position-relative mb-3 d-flex align-items-center">
+                                            <div className="position-absolute" style={{ left: -19, width: 10, height: 10, borderRadius: '50%', background: index === result.timeline.length - 1 ? 'var(--tl-success)' : 'var(--tl-primary-light)', border: '2px solid var(--tl-bg-deep)' }}></div>
+                                            <div style={{ fontSize: '0.8125rem', color: index === result.timeline.length - 1 ? 'var(--tl-text-primary)' : 'var(--tl-text-muted)' }}>
+                                                {event}
+                                            </div>
+                                        </div>
+                                    ))}
+                                </div>
+                            </div>
+
                         </div>
                     </div>
-
-                </div>
+                </motion.div>
             </div>
-          </div>
-          
-        </motion.div>
-      )}
+        )}
+      </div>
     </div>
   );
 }
