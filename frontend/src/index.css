@@ -978,3 +978,51 @@ a:hover { color: var(--tl-primary); }
 .btn:focus-visible {
   box-shadow: 0 0 0 3px rgba(var(--tl-primary-rgb), 0.25);
 }
+
+
+/* ----------------------------------------------------------------
+   19. PRINT STYLES (PDF EXPORT)
+   ---------------------------------------------------------------- */
+@media print {
+  body {
+    background: white !important;
+    color: black !important;
+  }
+  
+  .tl-sidebar, .tl-navbar, .no-print, .tl-btn {
+    display: none !important;
+  }
+  
+  .tl-main-content {
+    margin-left: 0 !important;
+    padding: 0 !important;
+  }
+
+  .tl-card, .tl-stat-card {
+    background: transparent !important;
+    border: 1px solid #ddd !important;
+    box-shadow: none !important;
+    color: black !important;
+    page-break-inside: avoid;
+  }
+
+  .tl-card h6, .tl-card h4, .tl-card p, .tl-card span {
+    color: black !important;
+  }
+  
+  .tl-badge {
+    border: 1px solid #ccc !important;
+    color: black !important;
+    background: transparent !important;
+  }
+
+  .recharts-wrapper {
+    background: white !important;
+  }
+  
+  /* Force dark text for charts/icons if possible */
+  svg text {
+    fill: black !important;
+  }
+}
+

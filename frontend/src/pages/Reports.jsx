@@ -3,12 +3,13 @@ import { useNavigate } from 'react-router-dom';
 import { motion } from 'framer-motion';
 import {
   FileText, ExternalLink, Filter, Globe, Mail, Phone, ScanLine, QrCode,
-  ShieldAlert, ShieldCheck, AlertTriangle, ChevronLeft, ChevronRight, Clock, TrendingUp
+  ShieldAlert, ShieldCheck, AlertTriangle, ChevronLeft, ChevronRight, Clock, TrendingUp, Download
 } from 'lucide-react';
 import investigationService from '../services/investigationService';
 import { PageHeader } from '../components/ui/PageHeader';
 import { Badge } from '../components/ui/Badge';
 import { Button } from '../components/ui/Button';
+import api from '../utils/axios';
 
 // ── Helpers ───────────────────────────────────────────────────────────── //
 
@@ -216,6 +217,23 @@ export default function Reports() {
   useEffect(() => { fetchData(); }, [fetchData]);
   useEffect(() => { setPage(1); }, [typeFilter]);
 
+  const handleExport = async (format) => {
+    try {
+      const response = await api.get(`/api/v1/investigation/export?format=${format}`, { responseType: 'blob' });
+      const url = window.URL.createObjectURL(new Blob([response.data]));
+      const link = document.createElement('a');
+      link.href = url;
+      link.setAttribute('download', `investigations_export.${format}`);
+      document.body.appendChild(link);
+      link.click();
+      link.parentNode.removeChild(link);
+      window.URL.revokeObjectURL(url);
+    } catch (err) {
+      console.error('Export failed', err);
+      alert('Export failed. Please try again.');
+    }
+  };
+
   return (
     <div className="pb-5">
       <PageHeader
@@ -226,18 +244,35 @@ export default function Reports() {
       {/* Stats */}
       {!loading && !error && <StatsBar items={items} />}
 
-      {/* Type filter */}
-      <motion.div initial={{ opacity: 0, y: 8 }} animate={{ opacity: 1, y: 0 }} className="mb-4 d-flex gap-2 flex-wrap">
-        {TYPES.map(t => (
-          <button
-            key={t || 'all'}
-            className={`tl-btn tl-btn-sm ${typeFilter === t ? 'tl-btn-primary' : 'tl-btn-secondary'}`}
-            onClick={() => setType(t)}
+      {/* Filters & Export */}
+      <div className="d-flex justify-content-between align-items-center mb-4 flex-wrap gap-3">
+        <motion.div initial={{ opacity: 0, x: -10 }} animate={{ opacity: 1, x: 0 }} className="d-flex gap-2 flex-wrap">
+          {TYPES.map(t => (
+            <button
+              key={t || 'all'}
+              className={`tl-btn tl-btn-sm ${typeFilter === t ? 'tl-btn-primary' : 'tl-btn-secondary'}`}
+              onClick={() => setType(t)}
+            >
+              {t ? <>{TYPE_ICONS[t]} {t}</> : 'All Types'}
+            </button>
+          ))}
+        </motion.div>
+        
+        <motion.div initial={{ opacity: 0, x: 10 }} animate={{ opacity: 1, x: 0 }} className="d-flex gap-2">
+          <button 
+            className="tl-btn tl-btn-secondary tl-btn-sm" 
+            onClick={() => handleExport('csv')}
           >
-            {t ? <>{TYPE_ICONS[t]} {t}</> : 'All Types'}
+            <Download size={14} /> Export CSV
           </button>
-        ))}
-      </motion.div>
+          <button 
+            className="tl-btn tl-btn-secondary tl-btn-sm" 
+            onClick={() => handleExport('json')}
+          >
+            <Download size={14} /> Export JSON
+          </button>
+        </motion.div>
+      </div>
 
       {/* Content */}
       {error ? (

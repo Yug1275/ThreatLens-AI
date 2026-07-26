@@ -37,6 +37,26 @@ export default function UrlInvestigation() {
   const [result, setResult] = useState(null);
   const [error, setError] = useState(null);
 
+  const handleSubmit = async (e) => {
+    e.preventDefault();
+    if (!url) return;
+    
+    setIsInvestigating(true);
+    setIsBackendComplete(false);
+    setShowReport(false);
+    setError(null);
+    setResult(null);
+
+    try {
+      const response = await api.post('/api/v1/investigation/url', { url });
+      setResult(response.data.result_data);
+      setIsBackendComplete(true);
+    } catch (err) {
+      console.error('Investigation failed:', err);
+      setError(err.response?.data?.detail || 'An error occurred during the investigation.');
+      setIsInvestigating(false);
+    }
+  };
 
   return (
     <div className="pb-5">

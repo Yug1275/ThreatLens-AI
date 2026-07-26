@@ -142,6 +142,7 @@ class InvestigationRepository:
                         else_=0,
                     )
                 ).label("suspicious"),
+                func.avg(Investigation.threat_score).label("average_score"),
             )
             .filter(
                 Investigation.user_id == user_id,
@@ -155,6 +156,7 @@ class InvestigationRepository:
             "malicious": int(rows.malicious or 0),
             "safe": int(rows.safe or 0),
             "suspicious": int(rows.suspicious or 0),
+            "average_score": float(rows.average_score or 0.0),
             "pending": db.query(func.count(Investigation.id))
             .filter(
                 Investigation.user_id == user_id,

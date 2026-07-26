@@ -88,6 +88,7 @@ export default function Dashboard() {
     { title: 'Malicious Threats', value: stats?.malicious ?? 0, icon: ShieldAlert, trend: 'Score > 75', up: false, color: '--tl-danger-rgb' },
     { title: 'Safe Entities', value: stats?.safe ?? 0, icon: Activity, trend: 'Score ≤ 40', up: true, color: '--tl-success-rgb' },
     { title: 'Suspicious', value: stats?.suspicious ?? 0, icon: AlertTriangle, trend: 'Score 41–75', up: true, color: '--tl-warning-rgb' },
+    { title: 'Average Score', value: stats?.average_score?.toFixed(1) ?? '0.0', icon: TrendingUp, trend: 'Overall', up: true, color: '--tl-info-rgb' },
   ];
 
   const statusBadge = (status) => {
@@ -127,7 +128,7 @@ export default function Dashboard() {
         {statCards.map((s, i) => {
           const Icon = s.icon;
           return (
-            <div key={i} className="col-6 col-xl-3">
+            <div key={i} className="col-6 col-md-4 col-xl">
               <motion.div {...fadeUp(0.05 * (i + 1))}>
                 {loading ? (
                   <div className="tl-stat-card"><Skeleton h="24px" w="50%" /><div style={{ marginTop: '1rem' }}><Skeleton h="40px" w="60%" /></div></div>

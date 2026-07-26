@@ -36,6 +36,7 @@ class DashboardStats(BaseModel):
     safe: int
     suspicious: int
     pending: int
+    average_score: float = 0.0
 
 
 class ActivityDataPoint(BaseModel):

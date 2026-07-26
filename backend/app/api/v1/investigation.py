@@ -1,5 +1,8 @@
 import math
-from fastapi import APIRouter, Depends, HTTPException, status, UploadFile, File, Query
+import io
+import csv
+from fastapi import APIRouter, Depends, HTTPException, status, UploadFile, File, Query, Response
+from fastapi.responses import StreamingResponse
 from sqlalchemy.orm import Session
 from typing import Optional
 
@@ -193,6 +196,56 @@ def get_user_investigations(
     )
     pages = math.ceil(total / limit) if total > 0 else 1
     return InvestigationListResponse(items=items, total=total, page=page, pages=pages, limit=limit)
+
+
+# ── GET — Export investigations ───────────────────────────────────────── #
+
+@router.get("/export")
+def export_investigations(
+    format: str = Query(default="json", description="Export format: csv or json"),
+    current_user: User = Depends(get_current_user),
+    db: Session = Depends(get_db),
+):
+    items, _ = investigation_repository.get_user_investigations(
+        db, user_id=current_user.id, skip=0, limit=10000, status="COMPLETED"
+    )
+    
+    if format.lower() == "csv":
+        stream = io.StringIO()
+        writer = csv.writer(stream)
+        writer.writerow(["ID", "Target", "Type", "Status", "Threat Score", "Created At"])
+        for item in items:
+            writer.writerow([
+                item.id,
+                item.target,
+                item.type,
+                item.status,
+                item.threat_score,
+                item.created_at.isoformat() if item.created_at else ""
+            ])
+        
+        response = StreamingResponse(iter([stream.getvalue()]), media_type="text/csv")
+        response.headers["Content-Disposition"] = "attachment; filename=investigations_export.csv"
+        return response
+    
+    elif format.lower() == "json":
+        import json
+        data = []
+        for item in items:
+            data.append({
+                "id": item.id,
+                "target": item.target,
+                "type": item.type,
+                "status": item.status,
+                "threat_score": item.threat_score,
+                "created_at": item.created_at.isoformat() if item.created_at else "",
+                "result_data": item.result_data
+            })
+        return Response(content=json.dumps(data, indent=2), media_type="application/json", headers={
+            "Content-Disposition": "attachment; filename=investigations_export.json"
+        })
+    else:
+        raise HTTPException(status_code=400, detail="Unsupported format. Use 'csv' or 'json'.")
 
 
 # ── GET — Single investigation by ID ─────────────────────────────────── #

@@ -4,7 +4,7 @@ import { motion } from 'framer-motion';
 import {
   ChevronLeft, Globe, Mail, Phone, ScanLine, QrCode,
   ShieldAlert, Activity, Clock, CheckCircle, AlertTriangle, XCircle,
-  Database, FileText, Link as LinkIcon
+  Database, FileText, Link as LinkIcon, Download, Printer
 } from 'lucide-react';
 import investigationService from '../services/investigationService';
 import { Badge } from '../components/ui/Badge';
@@ -157,10 +157,27 @@ export default function InvestigationDetail() {
 
   const meta = inv ? (TYPE_META[inv.type] || TYPE_META.URL) : null;
 
+  const handleExportJson = () => {
+    if (!inv) return;
+    const blob = new Blob([JSON.stringify(inv, null, 2)], { type: 'application/json' });
+    const url = window.URL.createObjectURL(blob);
+    const link = document.createElement('a');
+    link.href = url;
+    link.setAttribute('download', `investigation_${inv.id}.json`);
+    document.body.appendChild(link);
+    link.click();
+    link.parentNode.removeChild(link);
+    window.URL.revokeObjectURL(url);
+  };
+
+  const handlePrint = () => {
+    window.print();
+  };
+
   return (
     <div className="pb-5">
-      {/* Back link */}
-      <div className="mb-4">
+      {/* Back link & Export */}
+      <div className="d-flex justify-content-between align-items-center mb-4 no-print">
         <button
           className="tl-btn tl-btn-ghost tl-btn-sm"
           onClick={() => navigate('/history')}
@@ -168,6 +185,14 @@ export default function InvestigationDetail() {
         >
           <ChevronLeft size={16} /> Back to History
         </button>
+        <div className="d-flex gap-2">
+          <button className="tl-btn tl-btn-secondary tl-btn-sm" onClick={handleExportJson}>
+            <Download size={14} /> Export JSON
+          </button>
+          <button className="tl-btn tl-btn-secondary tl-btn-sm" onClick={handlePrint}>
+            <Printer size={14} /> Export PDF
+          </button>
+        </div>
       </div>
 
       {loading ? (
