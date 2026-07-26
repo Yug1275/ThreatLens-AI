@@ -12,3 +12,5 @@ email-validator
 bcrypt==4.0.1
 easyocr
 phonenumbers
+python-whois
+python-dateutil

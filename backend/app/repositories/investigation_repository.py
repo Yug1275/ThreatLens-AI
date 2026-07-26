@@ -64,6 +64,9 @@ class InvestigationRepository:
         limit: int = 20,
         inv_type: Optional[str] = None,
         status: Optional[str] = None,
+        search: Optional[str] = None,
+        sort_by: Optional[str] = "created_at",
+        sort_order: Optional[str] = "desc",
     ) -> tuple[list[Investigation], int]:
         """Returns (items, total_count) for pagination."""
         query = db.query(Investigation).filter(
@@ -74,9 +77,19 @@ class InvestigationRepository:
             query = query.filter(Investigation.type == inv_type.upper())
         if status:
             query = query.filter(Investigation.status == status.upper())
+        if search:
+            query = query.filter(Investigation.target.ilike(f"%{search}%"))
 
         total = query.count()
-        items = query.order_by(Investigation.created_at.desc()).offset(skip).limit(limit).all()
+        
+        # Sorting
+        sort_column = getattr(Investigation, sort_by, Investigation.created_at)
+        if sort_order.lower() == "asc":
+            query = query.order_by(sort_column.asc())
+        else:
+            query = query.order_by(sort_column.desc())
+            
+        items = query.offset(skip).limit(limit).all()
         return items, total
 
     def get_recent(self, db: Session, user_id: int, limit: int = 10) -> list[Investigation]:

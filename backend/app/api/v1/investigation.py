@@ -182,10 +182,14 @@ def get_user_investigations(
     limit: int = Query(default=20, ge=1, le=100),
     type: Optional[str] = Query(default=None, description="Filter by type: URL, OCR, QR, EMAIL, PHONE"),
     status: Optional[str] = Query(default=None, description="Filter by status: COMPLETED, FAILED, PENDING"),
+    search: Optional[str] = Query(default=None, description="Search by target"),
+    sort_by: Optional[str] = Query(default="created_at", description="Sort field (e.g. created_at, threat_score, target, type)"),
+    sort_order: Optional[str] = Query(default="desc", description="Sort order: asc or desc"),
 ):
     skip = (page - 1) * limit
     items, total = investigation_repository.get_user_investigations(
-        db, user_id=current_user.id, skip=skip, limit=limit, inv_type=type, status=status
+        db, user_id=current_user.id, skip=skip, limit=limit, inv_type=type, status=status,
+        search=search, sort_by=sort_by, sort_order=sort_order
     )
     pages = math.ceil(total / limit) if total > 0 else 1
     return InvestigationListResponse(items=items, total=total, page=page, pages=pages, limit=limit)

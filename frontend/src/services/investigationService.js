@@ -10,15 +10,18 @@ const BASE = '/api/v1/investigation';
 const investigationService = {
   /**
    * Fetch a paginated, optionally-filtered list of investigations.
-   * @param {{ page?: number, limit?: number, type?: string, status?: string }} params
+   * @param {{ page?: number, limit?: number, type?: string, status?: string, search?: string, sort_by?: string, sort_order?: string }} params
    * @returns {Promise<{ items: Investigation[], total: number, page: number, pages: number, limit: number }>}
    */
   getAll: (params = {}) => {
     const query = new URLSearchParams();
-    if (params.page)   query.set('page',   params.page);
-    if (params.limit)  query.set('limit',  params.limit);
-    if (params.type)   query.set('type',   params.type);
-    if (params.status) query.set('status', params.status);
+    if (params.page)       query.set('page',       params.page);
+    if (params.limit)      query.set('limit',      params.limit);
+    if (params.type)       query.set('type',       params.type);
+    if (params.status)     query.set('status',     params.status);
+    if (params.search)     query.set('search',     params.search);
+    if (params.sort_by)    query.set('sort_by',    params.sort_by);
+    if (params.sort_order) query.set('sort_order', params.sort_order);
     return api.get(`${BASE}/?${query.toString()}`).then(r => r.data);
   },
 

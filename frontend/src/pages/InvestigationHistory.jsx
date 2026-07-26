@@ -117,7 +117,18 @@ export default function InvestigationHistory() {
   const [typeFilter, setType]   = useState('');
   const [statusFilter, setStatus] = useState('');
   const [search, setSearch]     = useState('');
+  const [debouncedSearch, setDebouncedSearch] = useState('');
+  const [sortBy, setSortBy]     = useState('created_at');
+  const [sortOrder, setSortOrder] = useState('desc');
   const LIMIT = 15;
+
+  // Debounce search
+  useEffect(() => {
+    const handler = setTimeout(() => {
+      setDebouncedSearch(search);
+    }, 400);
+    return () => clearTimeout(handler);
+  }, [search]);
 
   // Delete modal
   const [deleteTarget, setDeleteTarget] = useState(null); // { id, target }
@@ -133,6 +144,9 @@ export default function InvestigationHistory() {
         limit: LIMIT,
         type: typeFilter || undefined,
         status: statusFilter || undefined,
+        search: debouncedSearch || undefined,
+        sort_by: sortBy,
+        sort_order: sortOrder,
       });
       setItems(data.items);
       setTotal(data.total);
@@ -142,17 +156,21 @@ export default function InvestigationHistory() {
     } finally {
       setLoading(false);
     }
-  }, [page, typeFilter, statusFilter]);
+  }, [page, typeFilter, statusFilter, debouncedSearch, sortBy, sortOrder]);
 
   useEffect(() => { fetchData(); }, [fetchData]);
 
-  // Reset page when filters change
-  useEffect(() => { setPage(1); }, [typeFilter, statusFilter]);
+  // Reset page when filters or search change
+  useEffect(() => { setPage(1); }, [typeFilter, statusFilter, debouncedSearch, sortBy, sortOrder]);
 
-  // ── Client-side search filter on loaded items ── //
-  const filtered = search.trim()
-    ? items.filter(i => i.target.toLowerCase().includes(search.toLowerCase()))
-    : items;
+  const handleSort = (field) => {
+    if (sortBy === field) {
+      setSortOrder(sortOrder === 'asc' ? 'desc' : 'asc');
+    } else {
+      setSortBy(field);
+      setSortOrder('desc');
+    }
+  };
 
   // ── Delete flow ── //
   const handleDeleteConfirm = async () => {
@@ -266,7 +284,7 @@ export default function InvestigationHistory() {
               </div>
             ))}
           </div>
-        ) : filtered.length === 0 ? (
+        ) : items.length === 0 ? (
           <div className="p-5 text-center">
             <div style={{ width: 56, height: 56, borderRadius: '50%', background: 'rgba(var(--tl-primary-rgb),0.08)', display: 'flex', alignItems: 'center', justifyContent: 'center', margin: '0 auto 1rem' }}>
               <History size={24} color="var(--tl-primary-light)" />
@@ -288,17 +306,26 @@ export default function InvestigationHistory() {
             <table className="tl-table">
               <thead>
                 <tr>
-                  <th>Type</th>
-                  <th>Target</th>
-                  <th>Score</th>
+                  <th style={{ cursor: 'pointer', userSelect: 'none' }} onClick={() => handleSort('type')}>
+                    Type {sortBy === 'type' && (sortOrder === 'asc' ? '↑' : '↓')}
+                  </th>
+                  <th style={{ cursor: 'pointer', userSelect: 'none' }} onClick={() => handleSort('target')}>
+                    Target {sortBy === 'target' && (sortOrder === 'asc' ? '↑' : '↓')}
+                  </th>
+                  <th>Status</th>
+                  <th style={{ cursor: 'pointer', userSelect: 'none' }} onClick={() => handleSort('threat_score')}>
+                    Score {sortBy === 'threat_score' && (sortOrder === 'asc' ? '↑' : '↓')}
+                  </th>
                   <th>Verdict</th>
-                  <th>Date</th>
+                  <th style={{ cursor: 'pointer', userSelect: 'none' }} onClick={() => handleSort('created_at')}>
+                    Date {sortBy === 'created_at' && (sortOrder === 'asc' ? '↑' : '↓')}
+                  </th>
                   <th style={{ textAlign: 'right' }}>Actions</th>
                 </tr>
               </thead>
               <tbody>
                 <AnimatePresence initial={false}>
-                  {filtered.map((inv, i) => (
+                  {items.map((inv, i) => (
                     <motion.tr
                       key={inv.id}
                       initial={{ opacity: 0, y: 8 }}
@@ -330,6 +357,18 @@ export default function InvestigationHistory() {
                         </span>
                         <span style={{ color: 'var(--tl-text-faint)', fontSize: '0.6875rem', fontFamily: 'var(--tl-font-mono)' }}>
                           {inv.id.slice(0, 8)}…
+                        </span>
+                      </td>
+
+                      {/* Status */}
+                      <td>
+                        <span style={{
+                          fontSize: '0.75rem', fontWeight: 600,
+                          padding: '3px 8px', borderRadius: 4,
+                          background: inv.status === 'COMPLETED' ? 'rgba(var(--tl-success-rgb), 0.1)' : inv.status === 'FAILED' ? 'rgba(var(--tl-danger-rgb), 0.1)' : 'rgba(var(--tl-warning-rgb), 0.1)',
+                          color: inv.status === 'COMPLETED' ? 'var(--tl-success)' : inv.status === 'FAILED' ? 'var(--tl-danger)' : 'var(--tl-warning)'
+                        }}>
+                          {inv.status}
                         </span>
                       </td>
 
