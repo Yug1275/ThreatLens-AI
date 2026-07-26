@@ -17,6 +17,9 @@ import OcrInvestigation from './pages/OcrInvestigation';
 import QrInvestigation from './pages/QrInvestigation';
 import EmailInvestigation from './pages/EmailInvestigation';
 import PhoneInvestigation from './pages/PhoneInvestigation';
+import InvestigationHistory from './pages/InvestigationHistory';
+import InvestigationDetail from './pages/InvestigationDetail';
+import Reports from './pages/Reports';
 
 /* ——————————————— Premium Landing Page ——————————————— */
 const Home = () => (
@@ -106,8 +109,6 @@ const PlaceholderPage = ({ title, description }) => (
 );
 
 const Investigations = () => <PlaceholderPage title="Investigations" description="Investigate URLs, files, IPs, and more." />;
-const HistoryPage = () => <PlaceholderPage title="History" description="View past investigation history." />;
-const Reports = () => <PlaceholderPage title="Reports" description="Generate and view threat reports." />;
 const SettingsPage = () => <PlaceholderPage title="Settings" description="Manage your account preferences." />;
 const NotFound = () => (
   <div className="tl-hero" style={{ minHeight: '80vh' }}>
@@ -143,7 +144,8 @@ function App() {
             <Route path="investigations/qr" element={<QrInvestigation />} />
             <Route path="investigations/email" element={<EmailInvestigation />} />
             <Route path="investigations/phone" element={<PhoneInvestigation />} />
-            <Route path="history" element={<HistoryPage />} />
+            <Route path="investigations/detail/:id" element={<InvestigationDetail />} />
+            <Route path="history" element={<InvestigationHistory />} />
             <Route path="reports" element={<Reports />} />
             <Route path="settings" element={<SettingsPage />} />
           </Route>
