@@ -9,7 +9,7 @@ from typing import Optional
 from app.api.deps import get_db, get_current_user
 from app.models.user import User
 from app.repositories.investigation_repository import investigation_repository
-from app.schemas.investigation import InvestigationResponse, InvestigationListResponse
+from app.schemas.investigation import InvestigationResponse, InvestigationListResponse, InvestigationUpdate, BulkDeleteRequest
 from app.services.url_investigator import URLInvestigatorService
 from app.services.ocr_investigator import OCRInvestigatorService
 from app.services.qr_investigator import QRInvestigatorService
@@ -188,11 +188,13 @@ def get_user_investigations(
     search: Optional[str] = Query(default=None, description="Search by target"),
     sort_by: Optional[str] = Query(default="created_at", description="Sort field (e.g. created_at, threat_score, target, type)"),
     sort_order: Optional[str] = Query(default="desc", description="Sort order: asc or desc"),
+    is_favorite: Optional[bool] = Query(default=None, description="Filter by favorite status"),
+    is_archived: Optional[bool] = Query(default=False, description="Filter by archived status"),
 ):
     skip = (page - 1) * limit
     items, total = investigation_repository.get_user_investigations(
         db, user_id=current_user.id, skip=skip, limit=limit, inv_type=type, status=status,
-        search=search, sort_by=sort_by, sort_order=sort_order
+        search=search, sort_by=sort_by, sort_order=sort_order, is_favorite=is_favorite, is_archived=is_archived
     )
     pages = math.ceil(total / limit) if total > 0 else 1
     return InvestigationListResponse(items=items, total=total, page=page, pages=pages, limit=limit)
@@ -262,6 +264,23 @@ def get_investigation(
     return inv
 
 
+# ── PATCH — Update metadata ──────────────────────────────────────────── #
+
+@router.patch("/{investigation_id}", response_model=InvestigationResponse)
+def update_investigation(
+    investigation_id: str,
+    update_data: InvestigationUpdate,
+    current_user: User = Depends(get_current_user),
+    db: Session = Depends(get_db),
+):
+    inv = investigation_repository.update(
+        db, investigation_id, current_user.id, update_data.model_dump(exclude_unset=True)
+    )
+    if not inv:
+        raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail="Investigation not found")
+    return inv
+
+
 # ── DELETE — Soft-delete ─────────────────────────────────────────────── #
 
 @router.delete("/{investigation_id}", status_code=status.HTTP_204_NO_CONTENT)
@@ -273,3 +292,15 @@ def delete_investigation(
     deleted = investigation_repository.soft_delete(db, investigation_id, current_user.id)
     if not deleted:
         raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail="Investigation not found")
+
+
+# ── POST — Bulk delete ───────────────────────────────────────────────── #
+
+@router.post("/bulk-delete", status_code=status.HTTP_200_OK)
+def bulk_delete_investigations(
+    request: BulkDeleteRequest,
+    current_user: User = Depends(get_current_user),
+    db: Session = Depends(get_db),
+):
+    count = investigation_repository.bulk_delete(db, request.ids, current_user.id)
+    return {"deleted_count": count}

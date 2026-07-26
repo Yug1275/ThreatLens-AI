@@ -1,13 +1,14 @@
 import React, { useState, useEffect } from 'react';
 import { useParams, useNavigate, Link } from 'react-router-dom';
-import { motion } from 'framer-motion';
+import { motion, AnimatePresence } from 'framer-motion';
 import {
   ChevronLeft, Globe, Mail, Phone, ScanLine, QrCode,
-  ShieldAlert, Activity, Clock, CheckCircle, AlertTriangle, XCircle,
-  Database, FileText, Link as LinkIcon, Download, Printer
+  ShieldAlert, Activity, Clock, CheckCircle, AlertTriangle, XCircle, X,
+  Database, FileText, Link as LinkIcon, Download, Printer, Star, Edit3, Archive, Tag, MessageSquare
 } from 'lucide-react';
 import investigationService from '../services/investigationService';
 import { Badge } from '../components/ui/Badge';
+import { Button } from '../components/ui/Button';
 import UrlReportView from '../components/investigation/UrlReportView';
 
 // ── Helpers ───────────────────────────────────────────────────────────── //
@@ -145,15 +146,32 @@ export default function InvestigationDetail() {
   const [loading, setLoading] = useState(true);
   const [error, setError]   = useState(null);
 
+  // Edit Modal State
+  const [showEdit, setShowEdit] = useState(false);
+  const [editName, setEditName] = useState('');
+  const [editNotes, setEditNotes] = useState('');
+  const [editTags, setEditTags] = useState('');
+  const [saving, setSaving] = useState(false);
+
   useEffect(() => {
+    fetchData();
+  }, [id]);
+
+  const fetchData = () => {
     setLoading(true);
     investigationService.getById(id)
-      .then(data => { setInv(data); setLoading(false); })
+      .then(data => { 
+        setInv(data); 
+        setEditName(data.name || '');
+        setEditNotes(data.notes || '');
+        setEditTags(data.tags ? data.tags.join(', ') : '');
+        setLoading(false); 
+      })
       .catch(e => {
         setError(e.response?.status === 404 ? 'Investigation not found.' : 'Failed to load investigation.');
         setLoading(false);
       });
-  }, [id]);
+  };
 
   const meta = inv ? (TYPE_META[inv.type] || TYPE_META.URL) : null;
 
@@ -174,6 +192,42 @@ export default function InvestigationDetail() {
     window.print();
   };
 
+  const toggleFavorite = async () => {
+    try {
+      const updated = await investigationService.updateInvestigation(inv.id, { is_favorite: !inv.is_favorite });
+      setInv(updated);
+    } catch(e) {
+      console.error(e);
+    }
+  };
+
+  const toggleArchive = async () => {
+    try {
+      const updated = await investigationService.updateInvestigation(inv.id, { is_archived: !inv.is_archived });
+      setInv(updated);
+    } catch(e) {
+      console.error(e);
+    }
+  };
+
+  const handleSaveEdit = async () => {
+    setSaving(true);
+    try {
+      const tagsArray = editTags.split(',').map(s => s.trim()).filter(Boolean);
+      const updated = await investigationService.updateInvestigation(inv.id, {
+        name: editName,
+        notes: editNotes,
+        tags: tagsArray
+      });
+      setInv(updated);
+      setShowEdit(false);
+    } catch (e) {
+      console.error(e);
+    } finally {
+      setSaving(false);
+    }
+  };
+
   return (
     <div className="pb-5">
       {/* Back link & Export */}
@@ -186,6 +240,11 @@ export default function InvestigationDetail() {
           <ChevronLeft size={16} /> Back to History
         </button>
         <div className="d-flex gap-2">
+          {inv && (
+            <button className="tl-btn tl-btn-ghost tl-btn-sm" onClick={toggleFavorite} title="Toggle Favorite">
+              <Star size={16} color={inv.is_favorite ? "var(--tl-warning)" : "var(--tl-text-muted)"} fill={inv.is_favorite ? "var(--tl-warning)" : "none"} />
+            </button>
+          )}
           <button className="tl-btn tl-btn-secondary tl-btn-sm" onClick={handleExportJson}>
             <Download size={14} /> Export JSON
           </button>
@@ -212,34 +271,70 @@ export default function InvestigationDetail() {
       ) : (
         <motion.div initial={{ opacity: 0, y: 16 }} animate={{ opacity: 1, y: 0 }}>
           {/* Page header */}
-          <div className="tl-card p-4 mb-4">
-            <div className="d-flex align-items-start gap-3 flex-wrap">
-              <div style={{
-                width: 48, height: 48, borderRadius: 12, flexShrink: 0,
-                background: `rgba(var(--tl-primary-rgb), 0.1)`,
-                color: `var(${meta?.color || '--tl-primary-light'})`,
-                display: 'flex', alignItems: 'center', justifyContent: 'center',
-              }}>
-                {meta?.icon}
+          <div className="tl-card p-4 mb-4" style={{ borderLeft: inv.is_archived ? '4px solid var(--tl-text-muted)' : '4px solid transparent' }}>
+            <div className="d-flex justify-content-between align-items-start">
+              <div className="d-flex align-items-start gap-3 flex-wrap">
+                <div style={{
+                  width: 48, height: 48, borderRadius: 12, flexShrink: 0,
+                  background: `rgba(var(--tl-primary-rgb), 0.1)`,
+                  color: `var(${meta?.color || '--tl-primary-light'})`,
+                  display: 'flex', alignItems: 'center', justifyContent: 'center',
+                }}>
+                  {meta?.icon}
+                </div>
+                <div style={{ flex: 1, minWidth: 0 }}>
+                  <div style={{ display: 'flex', alignItems: 'center', gap: '0.75rem', flexWrap: 'wrap' }}>
+                    <h4 style={{ fontWeight: 700, color: 'var(--tl-text-primary)', margin: 0, fontSize: '1.125rem' }}>
+                      {inv.name || meta?.label}
+                    </h4>
+                    <Badge variant={inv.threat_score > 75 ? 'danger' : inv.threat_score > 40 ? 'warning' : 'success'}>
+                      {inv.threat_score > 75 ? 'Malicious' : inv.threat_score > 40 ? 'Suspicious' : 'Safe'}
+                    </Badge>
+                    {inv.is_archived && <Badge variant="outline">Archived</Badge>}
+                  </div>
+                  <p style={{ color: 'var(--tl-text-muted)', margin: '4px 0 0', fontSize: '0.875rem', wordBreak: 'break-all' }}>
+                    {inv.target}
+                  </p>
+                  
+                  {inv.tags && inv.tags.length > 0 && (
+                    <div className="d-flex gap-2 mt-2 flex-wrap">
+                      {inv.tags.map(t => (
+                        <span key={t} style={{ fontSize: '0.7rem', background: 'rgba(var(--tl-info-rgb),0.1)', color: 'var(--tl-info)', padding: '2px 8px', borderRadius: 12 }}>
+                          {t}
+                        </span>
+                      ))}
+                    </div>
+                  )}
+
+                  <div className="d-flex gap-3 mt-2 flex-wrap" style={{ fontSize: '0.75rem', color: 'var(--tl-text-faint)' }}>
+                    <span><Clock size={11} style={{ marginRight: 4 }} />{formatDate(inv.created_at)}</span>
+                    <span style={{ fontFamily: 'var(--tl-font-mono)', opacity: 0.7 }}>{inv.id}</span>
+                  </div>
+                </div>
               </div>
-              <div style={{ flex: 1, minWidth: 0 }}>
-                <div style={{ display: 'flex', alignItems: 'center', gap: '0.75rem', flexWrap: 'wrap' }}>
-                  <h4 style={{ fontWeight: 700, color: 'var(--tl-text-primary)', margin: 0, fontSize: '1.125rem' }}>
-                    {meta?.label}
-                  </h4>
-                  <Badge variant={inv.threat_score > 75 ? 'danger' : inv.threat_score > 40 ? 'warning' : 'success'}>
-                    {inv.threat_score > 75 ? 'Malicious' : inv.threat_score > 40 ? 'Suspicious' : 'Safe'}
-                  </Badge>
-                </div>
-                <p style={{ color: 'var(--tl-text-muted)', margin: '4px 0 0', fontSize: '0.875rem', wordBreak: 'break-all' }}>
-                  {inv.target}
-                </p>
-                <div className="d-flex gap-3 mt-2 flex-wrap" style={{ fontSize: '0.75rem', color: 'var(--tl-text-faint)' }}>
-                  <span><Clock size={11} style={{ marginRight: 4 }} />{formatDate(inv.created_at)}</span>
-                  <span style={{ fontFamily: 'var(--tl-font-mono)', opacity: 0.7 }}>{inv.id}</span>
-                </div>
+
+              {/* Edit/Archive Actions */}
+              <div className="d-flex gap-2 flex-shrink-0 no-print">
+                <button className="tl-btn tl-btn-ghost tl-btn-sm" onClick={() => setShowEdit(true)}>
+                  <Edit3 size={14} /> Edit
+                </button>
+                <button className="tl-btn tl-btn-ghost tl-btn-sm" onClick={toggleArchive}>
+                  <Archive size={14} /> {inv.is_archived ? 'Unarchive' : 'Archive'}
+                </button>
               </div>
             </div>
+            
+            {/* Notes Section embedded in Header */}
+            {inv.notes && (
+              <div className="mt-4 p-3 rounded" style={{ background: 'var(--tl-bg-surface)', border: '1px solid var(--tl-border)' }}>
+                <div className="d-flex align-items-center gap-2 mb-2" style={{ color: 'var(--tl-text-secondary)', fontSize: '0.8125rem', fontWeight: 600 }}>
+                  <MessageSquare size={14} /> Analyst Notes
+                </div>
+                <div style={{ fontSize: '0.875rem', color: 'var(--tl-text-primary)', whiteSpace: 'pre-wrap', lineHeight: 1.5 }}>
+                  {inv.notes}
+                </div>
+              </div>
+            )}
           </div>
 
           {/* Report body */}
@@ -286,6 +381,77 @@ export default function InvestigationDetail() {
           )}
         </motion.div>
       )}
+
+      {/* ── Edit Modal ── */}
+      <AnimatePresence>
+        {showEdit && (
+          <div
+            style={{
+              position: 'fixed', inset: 0, zIndex: 9999,
+              background: 'rgba(0,0,0,0.7)', backdropFilter: 'blur(4px)',
+              display: 'flex', alignItems: 'center', justifyContent: 'center', padding: '1rem',
+            }}
+            onClick={() => setShowEdit(false)}
+          >
+            <motion.div
+              initial={{ scale: 0.9, opacity: 0 }} animate={{ scale: 1, opacity: 1 }} exit={{ opacity: 0, scale: 0.95 }}
+              onClick={e => e.stopPropagation()}
+              className="tl-card p-4"
+              style={{ maxWidth: 500, width: '100%' }}
+            >
+              <div className="d-flex align-items-center justify-content-between mb-4">
+                <div style={{ fontWeight: 700, color: 'var(--tl-text-primary)', fontSize: '1.125rem' }}>Edit Metadata</div>
+                <button onClick={() => setShowEdit(false)} style={{ background: 'none', border: 'none', cursor: 'pointer', color: 'var(--tl-text-muted)' }}>
+                  <X size={18} />
+                </button>
+              </div>
+              
+              <div className="mb-3">
+                <label className="mb-1" style={{ fontSize: '0.8125rem', color: 'var(--tl-text-muted)', fontWeight: 500 }}>Name (Optional)</label>
+                <input 
+                  type="text" 
+                  className="tl-input w-100" 
+                  value={editName}
+                  onChange={e => setEditName(e.target.value)}
+                  placeholder="e.g., Phishing attempt Q3..."
+                />
+              </div>
+
+              <div className="mb-3">
+                <label className="mb-1 d-flex align-items-center gap-1" style={{ fontSize: '0.8125rem', color: 'var(--tl-text-muted)', fontWeight: 500 }}>
+                  <Tag size={13} /> Tags (Comma separated)
+                </label>
+                <input 
+                  type="text" 
+                  className="tl-input w-100" 
+                  value={editTags}
+                  onChange={e => setEditTags(e.target.value)}
+                  placeholder="e.g., malware, urgent, credential-harvesting"
+                />
+              </div>
+
+              <div className="mb-4">
+                <label className="mb-1" style={{ fontSize: '0.8125rem', color: 'var(--tl-text-muted)', fontWeight: 500 }}>Analyst Notes</label>
+                <textarea 
+                  className="tl-input w-100" 
+                  rows={5}
+                  value={editNotes}
+                  onChange={e => setEditNotes(e.target.value)}
+                  placeholder="Add your findings, IOCs, or thoughts..."
+                  style={{ resize: 'vertical' }}
+                />
+              </div>
+
+              <div className="d-flex gap-3 justify-content-end">
+                <Button variant="ghost" onClick={() => setShowEdit(false)} disabled={saving}>Cancel</Button>
+                <Button variant="primary" onClick={handleSaveEdit} disabled={saving}>
+                  {saving ? 'Saving…' : 'Save Changes'}
+                </Button>
+              </div>
+            </motion.div>
+          </div>
+        )}
+      </AnimatePresence>
     </div>
   );
 }

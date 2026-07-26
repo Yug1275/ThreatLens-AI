@@ -15,6 +15,12 @@ class InvestigationResponse(BaseModel):
     created_at: datetime
     completed_at: Optional[datetime] = None
     is_deleted: bool = False
+    
+    name: Optional[str] = None
+    notes: Optional[str] = None
+    tags: Optional[List[str]] = None
+    is_favorite: bool = False
+    is_archived: bool = False
 
     class Config:
         from_attributes = True
@@ -57,3 +63,17 @@ class RecentInvestigationItem(BaseModel):
 
     class Config:
         from_attributes = True
+
+
+class InvestigationUpdate(BaseModel):
+    """Payload for updating metadata of an investigation."""
+    name: Optional[str] = None
+    notes: Optional[str] = None
+    tags: Optional[List[str]] = None
+    is_favorite: Optional[bool] = None
+    is_archived: Optional[bool] = None
+
+
+class BulkDeleteRequest(BaseModel):
+    """Payload for batch deletion."""
+    ids: List[str]

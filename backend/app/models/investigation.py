@@ -22,5 +22,12 @@ class Investigation(Base):
 
     # Soft-delete flag — hides from user without permanent removal
     is_deleted = Column(Boolean, default=False, nullable=False)
+    
+    # Metadata for management (Phase 5D)
+    name = Column(String, nullable=True)
+    notes = Column(String, nullable=True)
+    tags = Column(JSON, nullable=True)
+    is_favorite = Column(Boolean, default=False, nullable=False)
+    is_archived = Column(Boolean, default=False, nullable=False)
 
     user = relationship("User")

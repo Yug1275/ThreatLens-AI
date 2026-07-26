@@ -67,6 +67,8 @@ class InvestigationRepository:
         search: Optional[str] = None,
         sort_by: Optional[str] = "created_at",
         sort_order: Optional[str] = "desc",
+        is_favorite: Optional[bool] = None,
+        is_archived: Optional[bool] = False,
     ) -> tuple[list[Investigation], int]:
         """Returns (items, total_count) for pagination."""
         query = db.query(Investigation).filter(
@@ -78,7 +80,14 @@ class InvestigationRepository:
         if status:
             query = query.filter(Investigation.status == status.upper())
         if search:
-            query = query.filter(Investigation.target.ilike(f"%{search}%"))
+            query = query.filter(
+                (Investigation.target.ilike(f"%{search}%")) |
+                (Investigation.name.ilike(f"%{search}%"))
+            )
+        if is_favorite is not None:
+            query = query.filter(Investigation.is_favorite == is_favorite)
+        if is_archived is not None:
+            query = query.filter(Investigation.is_archived == is_archived)
 
         total = query.count()
         
@@ -116,6 +125,36 @@ class InvestigationRepository:
         inv.is_deleted = True
         db.commit()
         return True
+
+    def bulk_delete(self, db: Session, investigation_ids: list[str], user_id: int) -> int:
+        """Soft deletes multiple investigations. Returns count of deleted rows."""
+        result = db.query(Investigation).filter(
+            Investigation.id.in_(investigation_ids),
+            Investigation.user_id == user_id,
+            Investigation.is_deleted == False
+        ).update({"is_deleted": True}, synchronize_session=False)
+        db.commit()
+        return result
+
+    def update(
+        self,
+        db: Session,
+        investigation_id: str,
+        user_id: int,
+        update_data: dict
+    ) -> Optional[Investigation]:
+        """Updates metadata fields (name, notes, tags, is_favorite, is_archived)."""
+        inv = self.get_by_id(db, investigation_id, user_id)
+        if not inv:
+            return None
+
+        for key, value in update_data.items():
+            if hasattr(inv, key):
+                setattr(inv, key, value)
+                
+        db.commit()
+        db.refresh(inv)
+        return inv
 
     # ------------------------------------------------------------------ #
     #  AGGREGATE — Dashboard                                               #

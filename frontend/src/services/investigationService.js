@@ -10,7 +10,7 @@ const BASE = '/api/v1/investigation';
 const investigationService = {
   /**
    * Fetch a paginated, optionally-filtered list of investigations.
-   * @param {{ page?: number, limit?: number, type?: string, status?: string, search?: string, sort_by?: string, sort_order?: string }} params
+   * @param {{ page?: number, limit?: number, type?: string, status?: string, search?: string, sort_by?: string, sort_order?: string, is_favorite?: boolean, is_archived?: boolean }} params
    * @returns {Promise<{ items: Investigation[], total: number, page: number, pages: number, limit: number }>}
    */
   getAll: (params = {}) => {
@@ -22,6 +22,8 @@ const investigationService = {
     if (params.search)     query.set('search',     params.search);
     if (params.sort_by)    query.set('sort_by',    params.sort_by);
     if (params.sort_order) query.set('sort_order', params.sort_order);
+    if (params.is_favorite !== undefined) query.set('is_favorite', params.is_favorite);
+    if (params.is_archived !== undefined) query.set('is_archived', params.is_archived);
     return api.get(`${BASE}/?${query.toString()}`).then(r => r.data);
   },
 
@@ -38,6 +40,21 @@ const investigationService = {
    * @returns {Promise<void>}
    */
   deleteInvestigation: (id) => api.delete(`${BASE}/${id}`),
+
+  /**
+   * Update an investigation (metadata).
+   * @param {string} id
+   * @param {object} payload - { name, notes, tags, is_favorite, is_archived }
+   * @returns {Promise<Investigation>}
+   */
+  updateInvestigation: (id, payload) => api.patch(`${BASE}/${id}`, payload).then(r => r.data),
+
+  /**
+   * Bulk delete investigations.
+   * @param {string[]} ids
+   * @returns {Promise<{ deleted_count: number }>}
+   */
+  bulkDelete: (ids) => api.post(`${BASE}/bulk-delete`, { ids }).then(r => r.data),
 
   /**
    * Submit a URL investigation.
