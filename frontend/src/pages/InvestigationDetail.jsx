@@ -8,6 +8,7 @@ import {
 } from 'lucide-react';
 import investigationService from '../services/investigationService';
 import { Badge } from '../components/ui/Badge';
+import UrlReportView from '../components/investigation/UrlReportView';
 
 // ── Helpers ───────────────────────────────────────────────────────────── //
 
@@ -82,79 +83,6 @@ const SectionCard = ({ title, icon, children }) => (
   </div>
 );
 
-// ── URL-specific result sections ──────────────────────────────────────── //
-
-const UrlReportSections = ({ data }) => {
-  const di = data?.domain_info || {};
-  const si = data?.ssl_info || {};
-
-  const fmtDate = (iso) => {
-    if (!iso) return null;
-    try { return new Date(iso).toLocaleDateString('en-GB', { day: '2-digit', month: 'short', year: 'numeric' }); }
-    catch { return iso; }
-  };
-
-  return (
-    <>
-      <SectionCard title="Domain Identity" icon={<Globe size={16} color="var(--tl-primary-light)" />}>
-        <InfoRow label="Root Domain" value={di.root_domain} />
-        <InfoRow label="TLD" value={di.tld} />
-        {di.subdomain && <InfoRow label="Subdomain" value={di.subdomain} />}
-        <InfoRow label="Registrar" value={di.registrar} />
-        <InfoRow label="Created" value={fmtDate(di.creation_date)} />
-        <InfoRow label="Domain Age" value={di.domain_age_label} />
-        <InfoRow label="Country" value={di.registrant_country} />
-        {di.whois_error && (
-          <div style={{ marginTop: '0.5rem', fontSize: '0.8125rem', color: 'var(--tl-warning)' }}>
-            WHOIS: {di.whois_error}
-          </div>
-        )}
-      </SectionCard>
-
-      <SectionCard title="SSL Certificate" icon={<ShieldAlert size={16} color="var(--tl-primary-light)" />}>
-        <div className="d-flex justify-content-between align-items-center py-2" style={{ borderBottom: '1px solid var(--tl-border)' }}>
-          <span style={{ color: 'var(--tl-text-muted)', fontSize: '0.8125rem' }}>Status</span>
-          {si.valid ? <Badge variant="success">Valid</Badge> : <Badge variant="danger">Invalid</Badge>}
-        </div>
-        <InfoRow label="Issuer" value={si.issuer} />
-        <InfoRow label="Common Name" value={si.common_name} />
-        <InfoRow label="Expires" value={fmtDate(si.expiration_date)} />
-        <InfoRow label="Days Left" value={si.days_remaining != null ? `${si.days_remaining} days` : null} />
-        {si.ssl_error && (
-          <div style={{ marginTop: '0.5rem', fontSize: '0.8125rem', color: 'var(--tl-danger)' }}>
-            {si.ssl_error}
-          </div>
-        )}
-      </SectionCard>
-
-      {data?.iocs?.length > 0 && (
-        <SectionCard title="IOCs Extracted" icon={<Activity size={16} color="var(--tl-primary-light)" />}>
-          <div className="d-flex flex-wrap gap-2">
-            {data.iocs.map((ioc, i) => (
-              <Badge key={i} variant="outline">
-                <span style={{ color: 'var(--tl-primary-light)' }}>{ioc?.type}:</span> {ioc?.value}
-              </Badge>
-            ))}
-          </div>
-        </SectionCard>
-      )}
-
-      {data?.redirect_chain?.length > 0 && (
-        <SectionCard title="Redirect Chain" icon={<LinkIcon size={16} color="var(--tl-primary-light)" />}>
-          <div className="d-flex flex-column gap-2">
-            {data.redirect_chain.map((r, i) => (
-              <div key={i} className="d-flex align-items-center gap-2" style={{ fontSize: '0.8125rem' }}>
-                <span style={{ color: 'var(--tl-text-faint)' }}>{i + 1}.</span>
-                <Badge variant={r.status_code === 200 ? 'success' : 'warning'}>{r.status_code ?? '?'}</Badge>
-                <span style={{ color: 'var(--tl-text-secondary)', fontFamily: 'var(--tl-font-mono)', wordBreak: 'break-all' }}>{r.url}</span>
-              </div>
-            ))}
-          </div>
-        </SectionCard>
-      )}
-    </>
-  );
-};
 
 // ── Email-specific result sections ────────────────────────────────────── //
 
@@ -290,42 +218,47 @@ export default function InvestigationDetail() {
           </div>
 
           {/* Report body */}
-          <div className="row g-4">
-            {/* Threat gauge */}
-            <div className="col-12 col-md-4 col-xl-3">
-              <div className="tl-card p-4 text-center">
-                <h6 style={{ fontWeight: 600, color: 'var(--tl-text-primary)', textAlign: 'left', marginBottom: '1.5rem' }}>Risk Assessment</h6>
-                <ThreatGauge score={inv.threat_score ?? 0} />
-                {inv.result_data?.summary && (
-                  <div className="mt-4 p-3 rounded text-start" style={{ background: 'var(--tl-bg-surface)', fontSize: '0.8125rem', color: 'var(--tl-text-secondary)', lineHeight: 1.6 }}>
-                    {inv.result_data.summary}
-                  </div>
+          {inv.type === 'URL' ? (
+            <div className="mt-4">
+              <UrlReportView result={inv.result_data} />
+            </div>
+          ) : (
+            <div className="row g-4">
+              {/* Threat gauge (Legacy layout for non-URL) */}
+              <div className="col-12 col-md-4 col-xl-3">
+                <div className="tl-card p-4 text-center">
+                  <h6 style={{ fontWeight: 600, color: 'var(--tl-text-primary)', textAlign: 'left', marginBottom: '1.5rem' }}>Risk Assessment</h6>
+                  <ThreatGauge score={inv.threat_score ?? 0} />
+                  {inv.result_data?.summary && (
+                    <div className="mt-4 p-3 rounded text-start" style={{ background: 'var(--tl-bg-surface)', fontSize: '0.8125rem', color: 'var(--tl-text-secondary)', lineHeight: 1.6 }}>
+                      {inv.result_data.summary}
+                    </div>
+                  )}
+                </div>
+              </div>
+
+              {/* Type-specific sections */}
+              <div className="col-12 col-md-8 col-xl-9 d-flex flex-column gap-4">
+                {inv.type === 'EMAIL' && <EmailReportSections data={inv.result_data} />}
+                {inv.type === 'PHONE' && <PhoneReportSections data={inv.result_data} />}
+                {!['URL', 'EMAIL', 'PHONE'].includes(inv.type) && <GenericReport data={inv.result_data} />}
+
+                {/* AI recommendations */}
+                {inv.result_data?.recommendations && (
+                  <SectionCard title="Recommendations" icon={<FileText size={16} color="var(--tl-primary-light)" />}>
+                    <ul style={{ paddingLeft: '1.25rem', margin: 0 }}>
+                      {Array.isArray(inv.result_data.recommendations)
+                        ? inv.result_data.recommendations.map((r, i) => (
+                            <li key={i} style={{ color: 'var(--tl-text-secondary)', fontSize: '0.875rem', marginBottom: '0.5rem', lineHeight: 1.6 }}>{r}</li>
+                          ))
+                        : <li style={{ color: 'var(--tl-text-secondary)', fontSize: '0.875rem' }}>{inv.result_data.recommendations}</li>
+                      }
+                    </ul>
+                  </SectionCard>
                 )}
               </div>
             </div>
-
-            {/* Type-specific sections */}
-            <div className="col-12 col-md-8 col-xl-9 d-flex flex-column gap-4">
-              {inv.type === 'URL'   && <UrlReportSections   data={inv.result_data} />}
-              {inv.type === 'EMAIL' && <EmailReportSections data={inv.result_data} />}
-              {inv.type === 'PHONE' && <PhoneReportSections data={inv.result_data} />}
-              {!['URL', 'EMAIL', 'PHONE'].includes(inv.type) && <GenericReport data={inv.result_data} />}
-
-              {/* AI recommendations */}
-              {inv.result_data?.recommendations && (
-                <SectionCard title="Recommendations" icon={<FileText size={16} color="var(--tl-primary-light)" />}>
-                  <ul style={{ paddingLeft: '1.25rem', margin: 0 }}>
-                    {Array.isArray(inv.result_data.recommendations)
-                      ? inv.result_data.recommendations.map((r, i) => (
-                          <li key={i} style={{ color: 'var(--tl-text-secondary)', fontSize: '0.875rem', marginBottom: '0.5rem', lineHeight: 1.6 }}>{r}</li>
-                        ))
-                      : <li style={{ color: 'var(--tl-text-secondary)', fontSize: '0.875rem' }}>{inv.result_data.recommendations}</li>
-                    }
-                  </ul>
-                </SectionCard>
-              )}
-            </div>
-          </div>
+          )}
         </motion.div>
       )}
     </div>
