@@ -1,7 +1,7 @@
 import React, { useState, useRef } from 'react';
 import { useNavigate } from 'react-router-dom';
-import { motion } from 'framer-motion';
-import { Upload, ScanLine, ShieldAlert, Download, QrCode, ShieldCheck, AlertTriangle, Link as LinkIcon, Mail, PhoneCall, Wifi, User, CheckCircle, XCircle } from 'lucide-react';
+import { motion, AnimatePresence } from 'framer-motion';
+import { Upload, ScanLine, ShieldAlert, Download, QrCode, ShieldCheck, AlertTriangle, Link as LinkIcon, Mail, PhoneCall, Wifi, User, CheckCircle, XCircle, FileJson, ChevronDown, ChevronRight, Activity } from 'lucide-react';
 import api from '../utils/axios';
 import { Button } from '../components/ui/Button';
 import { Badge } from '../components/ui/Badge';
@@ -53,6 +53,7 @@ export default function QrInvestigation() {
   const [isInvestigating, setIsInvestigating] = useState(false);
   const [isBackendComplete, setIsBackendComplete] = useState(false);
   const [showReport, setShowReport] = useState(false);
+  const [showRawPayload, setShowRawPayload] = useState(false);
 
   const [result, setResult] = useState(null);
   const [error, setError] = useState(null);
@@ -96,6 +97,7 @@ export default function QrInvestigation() {
     setResult(null);
     setIsInvestigating(false);
     setShowReport(false);
+    setShowRawPayload(false);
   };
 
   const handleSubmit = async () => {
@@ -106,6 +108,7 @@ export default function QrInvestigation() {
     setShowReport(false);
     setError(null);
     setResult(null);
+    setShowRawPayload(false);
     
     const formData = new FormData();
     formData.append("file", file);
@@ -122,17 +125,18 @@ export default function QrInvestigation() {
     }
   };
 
-  const handleInvestigateDeep = () => {
+  const handleDeepInvestigate = (typeOverride, targetOverride) => {
       if (!result) return;
-      if (result.qr_type === 'URL') {
-          navigate('/investigations/url', { state: { target: result.extracted_data } });
-      } else if (result.qr_type === 'Email') {
-          // Extract email from mailto: if necessary
-          const email = result.extracted_data.replace('mailto:', '').split('?')[0];
+      const t = typeOverride || result.type;
+      const content = targetOverride || result.content;
+      
+      if (t === 'URL') {
+          navigate('/investigations/url', { state: { target: content } });
+      } else if (t === 'Email') {
+          const email = content.replace('mailto:', '').split('?')[0];
           navigate('/investigations/email', { state: { target: email } });
-      } else if (result.qr_type === 'Phone' || result.qr_type === 'SMS') {
-          // Extract phone from tel: or sms:
-          const phone = result.extracted_data.replace('tel:', '').replace('sms:', '').split(/[?:]/)[0];
+      } else if (t === 'Phone' || t === 'SMS') {
+          const phone = content.replace('tel:', '').replace('sms:', '').split(/[?:]/)[0];
           navigate('/investigations/phone', { state: { target: phone } });
       }
   };
@@ -145,11 +149,20 @@ export default function QrInvestigation() {
           case 'SMS': return <PhoneCall size={24} color="var(--tl-primary-light)" />;
           case 'WiFi': return <Wifi size={24} color="var(--tl-primary-light)" />;
           case 'Contact Card': return <User size={24} color="var(--tl-primary-light)" />;
+          case 'JSON': return <FileJson size={24} color="var(--tl-primary-light)" />;
           default: return <ScanLine size={24} color="var(--tl-primary-light)" />;
       }
   };
 
-  const canDeepInvestigate = result && ['URL', 'Email', 'Phone', 'SMS'].includes(result.qr_type);
+  const qrType = result?.type || 'Unknown';
+  const qrContent = result?.content || 'No data extracted';
+  const canDeepInvestigatePrimary = result && ['URL', 'Email', 'Phone', 'SMS'].includes(qrType);
+  
+  // Logic for JSON nested deep investigation
+  const nestedUrl = result?.metadata?.extracted_fields?.url;
+  const nestedEmail = result?.metadata?.extracted_fields?.email;
+  const nestedPhone = result?.metadata?.extracted_fields?.phone;
+  const hasNestedInvestigatable = qrType === 'JSON' && (nestedUrl || nestedEmail || nestedPhone);
 
   return (
     <div className="pb-5">
@@ -245,25 +258,61 @@ export default function QrInvestigation() {
                                 
                                 <div className="mt-4 p-3 rounded d-flex align-items-center justify-content-center gap-3" style={{ background: 'var(--tl-bg-surface)', border: '1px solid var(--tl-border)' }}>
                                     <div style={{ padding: 10, background: 'rgba(var(--tl-primary-rgb), 0.1)', borderRadius: 'var(--tl-radius-md)' }}>
-                                        {getQrIcon(result?.qr_type)}
+                                        {getQrIcon(qrType)}
                                     </div>
                                     <div className="text-start">
-                                        <div style={{ fontSize: '0.75rem', color: 'var(--tl-text-faint)', textTransform: 'uppercase' }}>QR Type Detected</div>
-                                        <div style={{ fontSize: '1.125rem', color: 'var(--tl-text-primary)', fontWeight: 600 }}>{result?.qr_type || 'Unknown'}</div>
+                                        <div style={{ fontSize: '0.75rem', color: 'var(--tl-text-faint)', textTransform: 'uppercase' }}>Payload Type</div>
+                                        <div style={{ fontSize: '1.125rem', color: 'var(--tl-text-primary)', fontWeight: 600 }}>{qrType}</div>
                                     </div>
                                 </div>
+                                
+                                {result.metadata?.application && result.metadata?.application !== "Unknown" && (
+                                    <div className="mt-3 p-3 rounded text-start" style={{ background: 'rgba(148,163,184,0.05)', border: '1px solid rgba(148,163,184,0.1)' }}>
+                                        <div style={{ fontSize: '0.75rem', color: 'var(--tl-text-faint)', textTransform: 'uppercase' }}>Detected Application</div>
+                                        <div style={{ fontSize: '0.9rem', color: 'var(--tl-text-primary)', fontWeight: 500 }}>{result.metadata.application}</div>
+                                        {result.metadata?.purpose && result.metadata?.purpose !== "Unknown" && (
+                                            <div style={{ fontSize: '0.8rem', color: 'var(--tl-text-muted)', marginTop: '0.25rem' }}>Purpose: {result.metadata.purpose}</div>
+                                        )}
+                                    </div>
+                                )}
                             </div>
                             
                             {/* Actions */}
-                            {canDeepInvestigate && (
+                            {canDeepInvestigatePrimary && (
                                 <div className="tl-card p-4">
                                     <h6 style={{ fontWeight: 600, color: 'var(--tl-text-primary)', marginBottom: '1rem' }}>Further Investigation</h6>
                                     <p style={{ fontSize: '0.8125rem', color: 'var(--tl-text-muted)', marginBottom: '1rem' }}>
-                                        This QR code contains a <strong>{result?.qr_type}</strong>. You can run a deep analysis on the extracted target using the dedicated investigation module.
+                                        This QR code contains a <strong>{qrType}</strong>. You can run a deep analysis on the extracted target using the dedicated investigation module.
                                     </p>
-                                    <Button className="w-100" onClick={handleDeepInvestigate}>
-                                        Open in {result?.qr_type} Investigation
+                                    <Button className="w-100" onClick={() => handleDeepInvestigate(qrType, qrContent)}>
+                                        Open in {qrType} Investigation
                                     </Button>
+                                </div>
+                            )}
+                            
+                            {hasNestedInvestigatable && (
+                                <div className="tl-card p-4">
+                                    <h6 style={{ fontWeight: 600, color: 'var(--tl-text-primary)', marginBottom: '1rem' }}>Deep Investigation Options</h6>
+                                    <p style={{ fontSize: '0.8125rem', color: 'var(--tl-text-muted)', marginBottom: '1rem' }}>
+                                        Nested investigatable fields were discovered inside the JSON payload.
+                                    </p>
+                                    <div className="d-flex flex-column gap-2">
+                                        {nestedUrl && (
+                                            <Button variant="secondary" className="w-100 text-start d-flex justify-content-between" onClick={() => handleDeepInvestigate('URL', nestedUrl)}>
+                                                <span>Investigate URL</span> <LinkIcon size={14} />
+                                            </Button>
+                                        )}
+                                        {nestedEmail && (
+                                            <Button variant="secondary" className="w-100 text-start d-flex justify-content-between" onClick={() => handleDeepInvestigate('Email', nestedEmail)}>
+                                                <span>Investigate Email</span> <Mail size={14} />
+                                            </Button>
+                                        )}
+                                        {nestedPhone && (
+                                            <Button variant="secondary" className="w-100 text-start d-flex justify-content-between" onClick={() => handleDeepInvestigate('Phone', nestedPhone)}>
+                                                <span>Investigate Phone</span> <PhoneCall size={14} />
+                                            </Button>
+                                        )}
+                                    </div>
                                 </div>
                             )}
                         </div>
@@ -273,45 +322,135 @@ export default function QrInvestigation() {
                             
                             {/* Decoded Content */}
                             <div className="tl-card p-4 flex-grow-1">
-                                <div className="d-flex align-items-center gap-2 mb-4">
-                                    <ScanLine size={18} color="var(--tl-primary-light)" />
-                                    <h6 style={{ fontWeight: 600, color: 'var(--tl-text-primary)', margin: 0 }}>Decoded Payload (Safe Preview)</h6>
-                                </div>
-                                
-                                <div className="p-4 rounded" style={{ background: '#020617', border: '1px solid var(--tl-border)' }}>
-                                    <div style={{ fontFamily: 'var(--tl-font-mono)', fontSize: '0.875rem', color: 'var(--tl-primary-light)', whiteSpace: 'pre-wrap', wordBreak: 'break-all' }}>
-                                        {result?.extracted_data || 'No data extracted'}
+                                <div className="d-flex align-items-center justify-content-between mb-4">
+                                    <div className="d-flex align-items-center gap-2">
+                                        <ScanLine size={18} color="var(--tl-primary-light)" />
+                                        <h6 style={{ fontWeight: 600, color: 'var(--tl-text-primary)', margin: 0 }}>Decoded Payload Intelligence</h6>
                                     </div>
                                 </div>
                                 
-                                <div className="mt-4 p-3 rounded" style={{ background: 'rgba(var(--tl-primary-rgb), 0.1)', fontSize: '0.8125rem', color: 'var(--tl-primary-light)', textAlign: 'left', lineHeight: 1.6, border: '1px solid rgba(var(--tl-primary-rgb), 0.2)' }}>
+                                {qrType === 'JSON' && result?.metadata?.extracted_fields ? (
+                                    <>
+                                        <div className="table-responsive rounded border mb-4" style={{ borderColor: 'var(--tl-border)' }}>
+                                            <table className="table table-borderless table-hover mb-0" style={{ '--bs-table-bg': 'transparent', '--bs-table-color': 'var(--tl-text-primary)' }}>
+                                                <thead style={{ background: 'var(--tl-bg-surface)', borderBottom: '1px solid var(--tl-border)' }}>
+                                                    <tr>
+                                                        <th style={{ fontSize: '0.75rem', color: 'var(--tl-text-muted)', fontWeight: 600, width: '30%' }}>EXTRACTED FIELD</th>
+                                                        <th style={{ fontSize: '0.75rem', color: 'var(--tl-text-muted)', fontWeight: 600 }}>VALUE</th>
+                                                    </tr>
+                                                </thead>
+                                                <tbody>
+                                                    {Object.keys(result.metadata.extracted_fields).length > 0 ? (
+                                                        Object.entries(result.metadata.extracted_fields).map(([key, value]) => (
+                                                            <tr key={key} style={{ borderBottom: '1px solid rgba(148,163,184,0.1)' }}>
+                                                                <td style={{ fontSize: '0.875rem', color: 'var(--tl-text-primary)', fontWeight: 500 }}>{key}</td>
+                                                                <td style={{ fontSize: '0.875rem', fontFamily: 'var(--tl-font-mono)', color: 'var(--tl-primary-light)', wordBreak: 'break-all' }}>{String(value)}</td>
+                                                            </tr>
+                                                        ))
+                                                    ) : (
+                                                        <tr>
+                                                            <td colSpan="2" className="text-center py-4" style={{ fontSize: '0.875rem', color: 'var(--tl-text-muted)' }}>
+                                                                No standardized fields found in JSON.
+                                                            </td>
+                                                        </tr>
+                                                    )}
+                                                </tbody>
+                                            </table>
+                                        </div>
+                                    </>
+                                ) : (
+                                    <div className="p-4 rounded mb-4" style={{ background: '#020617', border: '1px solid var(--tl-border)' }}>
+                                        <div style={{ fontFamily: 'var(--tl-font-mono)', fontSize: '0.875rem', color: 'var(--tl-primary-light)', whiteSpace: 'pre-wrap', wordBreak: 'break-all' }}>
+                                            {qrContent}
+                                        </div>
+                                    </div>
+                                )}
+                                
+                                {qrType === 'JSON' && (
+                                    <div className="mb-4">
+                                        <Button 
+                                            variant="ghost" 
+                                            size="sm" 
+                                            onClick={() => setShowRawPayload(!showRawPayload)}
+                                            className="d-flex align-items-center gap-1 p-0 text-muted hover-text-primary"
+                                        >
+                                            {showRawPayload ? <ChevronDown size={16} /> : <ChevronRight size={16} />}
+                                            <span style={{ fontSize: '0.8125rem' }}>View Raw JSON Payload</span>
+                                        </Button>
+                                        
+                                        <AnimatePresence>
+                                            {showRawPayload && (
+                                                <motion.div 
+                                                    initial={{ height: 0, opacity: 0 }} 
+                                                    animate={{ height: 'auto', opacity: 1 }} 
+                                                    exit={{ height: 0, opacity: 0 }}
+                                                    style={{ overflow: 'hidden' }}
+                                                >
+                                                    <div className="p-3 mt-2 rounded" style={{ background: '#020617', border: '1px solid var(--tl-border)' }}>
+                                                        <pre style={{ fontFamily: 'var(--tl-font-mono)', fontSize: '0.75rem', color: 'var(--tl-primary-light)', margin: 0, whiteSpace: 'pre-wrap', wordBreak: 'break-all' }}>
+                                                            {JSON.stringify(result.metadata?.parsed, null, 2)}
+                                                        </pre>
+                                                    </div>
+                                                </motion.div>
+                                            )}
+                                        </AnimatePresence>
+                                    </div>
+                                )}
+                                
+                                <div className="mt-auto p-3 rounded" style={{ background: 'rgba(var(--tl-primary-rgb), 0.1)', fontSize: '0.8125rem', color: 'var(--tl-primary-light)', textAlign: 'left', lineHeight: 1.6, border: '1px solid rgba(var(--tl-primary-rgb), 0.2)' }}>
                                     {result?.summary || 'No summary available.'}
                                 </div>
                             </div>
                             
-                            {/* Threat Indicators */}
-                            <div className="tl-card p-4">
-                                <div className="d-flex align-items-center gap-2 mb-3">
-                                    <ShieldAlert size={18} color={result?.indicators?.length > 0 ? "var(--tl-danger)" : "var(--tl-success)"} />
-                                    <h6 style={{ fontWeight: 600, color: 'var(--tl-text-primary)', margin: 0 }}>Threat Indicators</h6>
-                                </div>
-                                {result?.indicators && result.indicators.length > 0 ? (
-                                    <div className="d-flex flex-column gap-2">
-                                        {result.indicators.map((ind, i) => (
-                                            <div key={i} className="d-flex align-items-center gap-2 p-2 rounded" style={{ background: 'rgba(var(--tl-danger-rgb), 0.1)', color: 'var(--tl-danger)', fontSize: '0.8125rem' }}>
-                                                <AlertTriangle size={14} />
-                                                <span>{ind}</span>
+                            {/* Threat Indicators & Recommendations */}
+                            <div className="row g-4">
+                                <div className="col-12 col-md-6">
+                                    <div className="tl-card p-4 h-100">
+                                        <div className="d-flex align-items-center gap-2 mb-3">
+                                            <ShieldAlert size={18} color={result?.indicators?.length > 0 ? "var(--tl-danger)" : "var(--tl-success)"} />
+                                            <h6 style={{ fontWeight: 600, color: 'var(--tl-text-primary)', margin: 0 }}>Threat Indicators</h6>
+                                        </div>
+                                        {result?.indicators && result.indicators.length > 0 ? (
+                                            <div className="d-flex flex-column gap-2">
+                                                {result.indicators.map((ind, i) => (
+                                                    <div key={i} className="d-flex align-items-center gap-2 p-2 rounded" style={{ background: 'rgba(var(--tl-danger-rgb), 0.1)', color: 'var(--tl-danger)', fontSize: '0.8125rem' }}>
+                                                        <AlertTriangle size={14} />
+                                                        <span>{ind}</span>
+                                                    </div>
+                                                ))}
                                             </div>
-                                        ))}
+                                        ) : (
+                                            <div className="d-flex align-items-center gap-2 p-2 rounded" style={{ background: 'rgba(var(--tl-success-rgb), 0.1)', color: 'var(--tl-success)', fontSize: '0.8125rem' }}>
+                                                <CheckCircle size={14} />
+                                                <span>No high-risk indicators detected in the payload structure.</span>
+                                            </div>
+                                        )}
                                     </div>
-                                ) : (
-                                    <div className="d-flex align-items-center gap-2 p-2 rounded" style={{ background: 'rgba(var(--tl-success-rgb), 0.1)', color: 'var(--tl-success)', fontSize: '0.8125rem' }}>
-                                        <CheckCircle size={14} />
-                                        <span>No high-risk indicators detected in the payload structure.</span>
+                                </div>
+                                <div className="col-12 col-md-6">
+                                    <div className="tl-card p-4 h-100">
+                                        <div className="d-flex align-items-center gap-2 mb-3">
+                                            <Activity size={18} color="var(--tl-primary-light)" />
+                                            <h6 style={{ fontWeight: 600, color: 'var(--tl-text-primary)', margin: 0 }}>Recommendations</h6>
+                                        </div>
+                                        {result?.recommendations && result.recommendations.length > 0 ? (
+                                            <div className="d-flex flex-column gap-2">
+                                                {result.recommendations.map((rec, i) => (
+                                                    <div key={i} className="d-flex align-items-start gap-2 p-2 rounded" style={{ background: 'rgba(148,163,184,0.05)', color: 'var(--tl-text-primary)', fontSize: '0.8125rem' }}>
+                                                        <span style={{ color: 'var(--tl-primary-light)', marginTop: '2px' }}>•</span>
+                                                        <span>{rec}</span>
+                                                    </div>
+                                                ))}
+                                            </div>
+                                        ) : (
+                                            <div className="p-2" style={{ fontSize: '0.8125rem', color: 'var(--tl-text-muted)' }}>
+                                                No specific recommendations available.
+                                            </div>
+                                        )}
                                     </div>
-                                )}
+                                </div>
                             </div>
-
+                            
                         </div>
                     </div>
                     

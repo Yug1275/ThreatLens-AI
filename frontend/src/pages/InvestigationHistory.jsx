@@ -120,8 +120,8 @@ const RowMenu = ({ inv, onRename, onArchive, onDelete, onRerun }) => {
           <motion.div
             initial={{ opacity: 0, y: 5 }} animate={{ opacity: 1, y: 0 }} exit={{ opacity: 0, y: 5 }}
             style={{
-              position: 'absolute', right: 0, top: '100%', zIndex: 10,
-              background: 'var(--tl-bg-panel)', border: '1px solid var(--tl-border)', borderRadius: 8,
+              position: 'absolute', right: 0, top: '100%', zIndex: 50,
+              background: 'var(--tl-bg-elevated)', border: '1px solid var(--tl-border)', borderRadius: 8,
               boxShadow: '0 4px 12px rgba(0,0,0,0.2)', padding: '0.5rem', minWidth: 160
             }}
           >
