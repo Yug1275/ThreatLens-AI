@@ -90,22 +90,86 @@ const SectionCard = ({ title, icon, children }) => (
 const EmailReportSections = ({ data }) => (
   <>
     <SectionCard title="Sender Analysis" icon={<Mail size={16} color="var(--tl-primary-light)" />}>
-      <InfoRow label="From" value={data?.sender} />
-      <InfoRow label="Domain" value={data?.sender_domain} />
+      <InfoRow label="Envelope From" value={data?.return_path} />
+      <InfoRow label="Header From" value={data?.sender} />
+      <InfoRow label="Reply-To" value={data?.reply_to} />
       <InfoRow label="Subject" value={data?.subject} />
+      <InfoRow label="Recipient" value={data?.recipient} />
     </SectionCard>
 
-    <SectionCard title="Authentication" icon={<ShieldAlert size={16} color="var(--tl-primary-light)" />}>
-      {['spf', 'dkim', 'dmarc'].map(key => (
-        <div key={key} className="d-flex justify-content-between align-items-center py-2" style={{ borderBottom: '1px solid var(--tl-border)' }}>
-          <span style={{ color: 'var(--tl-text-muted)', fontSize: '0.8125rem' }}>{key.toUpperCase()}</span>
-          {data?.[key] === 'pass'
-            ? <Badge variant="success">Pass</Badge>
-            : data?.[key] === 'fail'
-            ? <Badge variant="danger">Fail</Badge>
-            : <Badge variant="outline">{data?.[key] ?? 'N/A'}</Badge>}
+    {data?.input_mode === 'Raw Headers' ? (
+      <SectionCard title="Domain Authentication" icon={<ShieldAlert size={16} color="var(--tl-primary-light)" />}>
+        {['spf', 'dkim', 'dmarc'].map(key => (
+          <div key={key} className="d-flex justify-content-between align-items-center py-2" style={{ borderBottom: '1px solid var(--tl-border)' }}>
+            <span style={{ color: 'var(--tl-text-muted)', fontSize: '0.8125rem' }}>{key.toUpperCase()}</span>
+            {data?.[key]?.toLowerCase() === 'pass'
+              ? <Badge variant="success">Pass</Badge>
+              : data?.[key]?.toLowerCase() === 'fail'
+              ? <Badge variant="danger">Fail</Badge>
+              : <Badge variant="outline">{data?.[key] ?? 'Unavailable'}</Badge>}
+          </div>
+        ))}
+        {data?.spf === 'Not Available' && (
+          <div className="mt-3 text-muted" style={{ fontSize: '0.75rem' }}>
+              * Authentication results are not available.
+          </div>
+        )}
+      </SectionCard>
+    ) : (
+      <SectionCard title="Authentication Analysis" icon={<ShieldAlert size={16} color="var(--tl-primary-light)" />}>
+        <div className="d-flex align-items-center gap-2 p-3 rounded" style={{ background: 'var(--tl-bg-surface)', color: 'var(--tl-text-secondary)', fontSize: '0.875rem' }}>
+            <AlertTriangle size={16} />
+            <span><strong>Unavailable:</strong> Raw email headers were not provided. Authentication checks (SPF, DKIM, and DMARC) require complete SMTP headers.</span>
         </div>
-      ))}
+      </SectionCard>
+    )}
+
+    <SectionCard title="Detection Indicators" icon={<ShieldAlert size={16} color="var(--tl-primary-light)" />}>
+      {data?.matched_rules?.length > 0 ? (
+        <div className="d-flex flex-column gap-2">
+          {data.matched_rules.map((ind, i) => {
+            const isWarning = ind.includes("Not Available") || ind.includes("missing") || ind.includes("skipped");
+            return (
+              <div key={i} className="d-flex align-items-start gap-2 p-2 rounded" style={{ background: isWarning ? 'rgba(var(--tl-warning-rgb), 0.1)' : 'rgba(var(--tl-danger-rgb), 0.1)', color: isWarning ? 'var(--tl-warning)' : 'var(--tl-danger)', fontSize: '0.8125rem' }}>
+                {isWarning ? <AlertTriangle size={14} style={{ marginTop: 2, flexShrink: 0 }} /> : <XCircle size={14} style={{ marginTop: 2, flexShrink: 0 }} />}
+                <span>{ind}</span>
+              </div>
+            )
+          })}
+        </div>
+      ) : (
+        <div className="d-flex align-items-center gap-2 p-2 rounded" style={{ background: 'rgba(var(--tl-success-rgb), 0.1)', color: 'var(--tl-success)', fontSize: '0.8125rem' }}>
+          <CheckCircle size={14} />
+          <span>No high-risk indicators detected.</span>
+        </div>
+      )}
+    </SectionCard>
+
+    <SectionCard title="Extracted Entities (IOCs)" icon={<Database size={16} color="var(--tl-primary-light)" />}>
+      {data?.extracted_iocs?.length > 0 ? (
+        <div className="table-responsive">
+          <table className="table table-dark table-hover mb-0" style={{ background: 'transparent' }}>
+            <thead>
+              <tr>
+                <th style={{ color: 'var(--tl-text-muted)', borderBottom: '1px solid var(--tl-border)' }}>Type</th>
+                <th style={{ color: 'var(--tl-text-muted)', borderBottom: '1px solid var(--tl-border)' }}>Value</th>
+              </tr>
+            </thead>
+            <tbody>
+              {data.extracted_iocs.map((ioc, i) => (
+                <tr key={i} style={{ verticalAlign: 'middle' }}>
+                  <td style={{ borderColor: 'var(--tl-border)', color: 'var(--tl-text-primary)' }}>{ioc.type}</td>
+                  <td style={{ borderColor: 'var(--tl-border)', fontFamily: 'var(--tl-font-mono)', color: 'var(--tl-primary-light)' }}>{ioc.value}</td>
+                </tr>
+              ))}
+            </tbody>
+          </table>
+        </div>
+      ) : (
+        <div className="p-3 text-center rounded" style={{ background: 'var(--tl-bg-surface)', color: 'var(--tl-text-muted)', fontSize: '0.875rem' }}>
+          No identifiable entities extracted.
+        </div>
+      )}
     </SectionCard>
   </>
 );

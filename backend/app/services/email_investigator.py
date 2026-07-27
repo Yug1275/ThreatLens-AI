@@ -21,28 +21,46 @@ class EmailInvestigatorService:
         
         # Auth defaults
         auth_results = {
-            "spf": "Not Available",
-            "dkim": "Not Available",
-            "dmarc": "Not Available"
+            "spf": "Unavailable",
+            "dkim": "Unavailable",
+            "dmarc": "Unavailable"
         }
         sender_analysis = {
-            "envelope_from": "Not Available",
-            "header_from": "Not Available",
-            "reply_to": "Not Available",
+            "envelope_from": "Not Provided",
+            "header_from": "Not Provided",
+            "reply_to": "Not Provided",
             "mismatch": False
         }
         
         full_text = ""
+        input_mode = "Structured Email"
+        h_subject = "Not Provided"
+        recipient = "Not Provided"
+        auth_header = "Not Provided"
+        received_chain = []
+        message_id = "Not Provided"
+        originating_ip = "Not Provided"
         
         if raw_headers:
+            input_mode = "Raw Headers"
             # Parse raw headers using Python's email library
             msg = email.message_from_string(raw_headers, policy=policy.default)
             
             # Extract basic info
-            h_from = msg.get('From', '')
-            h_reply_to = msg.get('Reply-To', '')
-            h_subject = msg.get('Subject', '')
-            h_return_path = msg.get('Return-Path', '')
+            h_from = msg.get('From', 'Not Provided')
+            h_reply_to = msg.get('Reply-To', 'Not Provided')
+            h_subject = msg.get('Subject', 'Not Provided')
+            h_return_path = msg.get('Return-Path', 'Not Provided')
+            recipient = msg.get('To', 'Not Provided')
+            message_id = msg.get('Message-ID', 'Not Provided')
+            
+            received_headers = msg.get_all('Received', [])
+            if received_headers:
+                received_chain = received_headers
+                # Basic originating IP extraction from first received header
+                ip_match = re.search(r'\[(\d{1,3}\.\d{1,3}\.\d{1,3}\.\d{1,3})\]', received_headers[-1])
+                if ip_match:
+                    originating_ip = ip_match.group(1)
             
             sender_analysis["header_from"] = h_from
             sender_analysis["reply_to"] = h_reply_to
@@ -58,11 +76,14 @@ class EmailInvestigatorService:
                 indicators.append("Mismatch between Envelope From and Header From")
                 
             # Parse Authentication-Results
-            auth_header = str(msg.get('Authentication-Results', '')).lower()
-            if auth_header:
-                auth_results["spf"] = "Pass" if "spf=pass" in auth_header else ("Fail" if "spf=" in auth_header else "Not Available")
-                auth_results["dkim"] = "Pass" if "dkim=pass" in auth_header else ("Fail" if "dkim=" in auth_header else "Not Available")
-                auth_results["dmarc"] = "Pass" if "dmarc=pass" in auth_header else ("Fail" if "dmarc=" in auth_header else "Not Available")
+            auth_header_val = str(msg.get('Authentication-Results', ''))
+            auth_header = auth_header_val if auth_header_val else "Not Provided"
+            
+            auth_lower = auth_header_val.lower()
+            if auth_lower:
+                auth_results["spf"] = "Pass" if "spf=pass" in auth_lower else ("Fail" if "spf=" in auth_lower else "Not Available")
+                auth_results["dkim"] = "Pass" if "dkim=pass" in auth_lower else ("Fail" if "dkim=" in auth_lower else "Not Available")
+                auth_results["dmarc"] = "Pass" if "dmarc=pass" in auth_lower else ("Fail" if "dmarc=" in auth_lower else "Not Available")
                 
                 # Penalize failures
                 if auth_results["spf"] == "Fail": threat_score += 20; indicators.append("SPF Authentication Failed")
@@ -70,6 +91,9 @@ class EmailInvestigatorService:
                 if auth_results["dmarc"] == "Fail": threat_score += 20; indicators.append("DMARC Authentication Failed")
             else:
                 indicators.append("Authentication-Results header missing")
+                auth_results["spf"] = "Not Provided"
+                auth_results["dkim"] = "Not Provided"
+                auth_results["dmarc"] = "Not Provided"
                 
             # If body is embedded in raw message
             if msg.is_multipart():
@@ -83,16 +107,19 @@ class EmailInvestigatorService:
             
         else:
             # Mode 1: Structured
-            sender_analysis["header_from"] = sender_email or ""
+            sender_analysis["header_from"] = sender_email or "Not Provided"
             sender_analysis["envelope_from"] = "Not Provided"
             sender_analysis["reply_to"] = "Not Provided"
+            h_subject = subject or "Not Provided"
             indicators.append("Authentication skipped: Raw email headers were not supplied.")
             full_text = f"{sender_email}\n{subject}\n{body}"
             
         # Typosquatting Detection
         header_email = cls._extract_email_address(sender_analysis["header_from"])
+        sender_domain = "Not Provided"
         if header_email:
-            domain = header_email.split('@')[-1].lower()
+            sender_domain = header_email.split('@')[-1].lower()
+            domain = sender_domain
             if domain not in cls.TARGET_DOMAINS:
                 # Check similarity
                 for target in cls.TARGET_DOMAINS:
@@ -110,20 +137,52 @@ class EmailInvestigatorService:
         iocs = cls._extract_entities(full_text)
         
         threat_score = min(threat_score, 99)
+        risk_level = "Malicious" if threat_score > 75 else "Suspicious" if threat_score > 40 else "Safe"
         
+        recommendations = []
+        if threat_score > 40:
+            recommendations.append("Do not click any embedded links or download attachments.")
+            recommendations.append("Report this email to your security operations center.")
+        else:
+            recommendations.append("No immediate threats found, but proceed with caution.")
+
         return {
+            "input_mode": input_mode,
+            "sender": sender_analysis["header_from"],
+            "sender_domain": sender_domain,
+            "subject": h_subject,
+            "reply_to": sender_analysis["reply_to"],
+            "return_path": sender_analysis["envelope_from"],
+            "recipient": recipient,
+            
+            "spf": auth_results["spf"],
+            "dkim": auth_results["dkim"],
+            "dmarc": auth_results["dmarc"],
+            
+            "authentication_results": auth_header,
+            "received_chain": received_chain,
+            "message_id": message_id,
+            "originating_ip": originating_ip,
+            
             "threat_score": threat_score,
+            "risk_level": risk_level,
+            "matched_rules": indicators,
+            "extracted_iocs": iocs,
+            "recommendations": recommendations,
+            
+            # Keep legacy fields just in case anything else depends on them implicitly
             "is_suspicious": threat_score > 40,
             "auth_results": auth_results,
             "sender_analysis": sender_analysis,
             "indicators": indicators,
             "iocs": iocs,
+            
             "summary": "AI Investigation Summary will be available in Phase 9."
         }
 
     @staticmethod
     def _extract_email_address(text: str) -> str:
-        if not text: return ""
+        if not text or text == "Not Provided": return ""
         match = re.search(r'[\w\.-]+@[\w\.-]+\.\w+', text)
         return match.group(0) if match else ""
         

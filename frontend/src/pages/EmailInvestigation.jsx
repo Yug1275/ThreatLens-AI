@@ -255,9 +255,9 @@ export default function EmailInvestigation() {
                                     <ShieldAlert size={18} color={result.indicators.length > 0 ? "var(--tl-danger)" : "var(--tl-success)"} />
                                     <h6 style={{ fontWeight: 600, color: 'var(--tl-text-primary)', margin: 0 }}>Detection Indicators</h6>
                                 </div>
-                                {result.indicators.length > 0 ? (
+                                {result.matched_rules.length > 0 ? (
                                     <div className="d-flex flex-column gap-2">
-                                        {result.indicators.map((ind, i) => {
+                                        {result.matched_rules.map((ind, i) => {
                                             const isWarning = ind.includes("Not Available") || ind.includes("missing") || ind.includes("skipped");
                                             return (
                                                 <div key={i} className="d-flex align-items-start gap-2 p-2 rounded" style={{ background: isWarning ? 'rgba(var(--tl-warning-rgb), 0.1)' : 'rgba(var(--tl-danger-rgb), 0.1)', color: isWarning ? 'var(--tl-warning)' : 'var(--tl-danger)', fontSize: '0.8125rem' }}>
@@ -280,53 +280,62 @@ export default function EmailInvestigation() {
                         <div className="col-12 col-xl-8 d-flex flex-column gap-4">
                             
                             {/* Email Authentication */}
-                            <div className="tl-card p-4">
-                                <h6 style={{ fontWeight: 600, color: 'var(--tl-text-primary)', marginBottom: '1.5rem' }}>Domain Authentication</h6>
-                                <div className="row g-3">
-                                    <div className="col-md-4">
-                                        <div className="p-3 rounded" style={{ background: 'var(--tl-bg-surface)' }}>
-                                            <div style={{ color: 'var(--tl-text-faint)', fontSize: '0.75rem', textTransform: 'uppercase', marginBottom: 8 }}>SPF</div>
-                                            {renderAuthBadge(result.auth_results.spf)}
+                            {result.input_mode === 'Raw Headers' ? (
+                                <div className="tl-card p-4">
+                                    <h6 style={{ fontWeight: 600, color: 'var(--tl-text-primary)', marginBottom: '1.5rem' }}>Domain Authentication</h6>
+                                    <div className="row g-3">
+                                        <div className="col-md-4">
+                                            <div className="p-3 rounded" style={{ background: 'var(--tl-bg-surface)' }}>
+                                                <div style={{ color: 'var(--tl-text-faint)', fontSize: '0.75rem', textTransform: 'uppercase', marginBottom: 8 }}>SPF</div>
+                                                {renderAuthBadge(result.spf)}
+                                            </div>
+                                        </div>
+                                        <div className="col-md-4">
+                                            <div className="p-3 rounded" style={{ background: 'var(--tl-bg-surface)' }}>
+                                                <div style={{ color: 'var(--tl-text-faint)', fontSize: '0.75rem', textTransform: 'uppercase', marginBottom: 8 }}>DKIM</div>
+                                                {renderAuthBadge(result.dkim)}
+                                            </div>
+                                        </div>
+                                        <div className="col-md-4">
+                                            <div className="p-3 rounded" style={{ background: 'var(--tl-bg-surface)' }}>
+                                                <div style={{ color: 'var(--tl-text-faint)', fontSize: '0.75rem', textTransform: 'uppercase', marginBottom: 8 }}>DMARC</div>
+                                                {renderAuthBadge(result.dmarc)}
+                                            </div>
                                         </div>
                                     </div>
-                                    <div className="col-md-4">
-                                        <div className="p-3 rounded" style={{ background: 'var(--tl-bg-surface)' }}>
-                                            <div style={{ color: 'var(--tl-text-faint)', fontSize: '0.75rem', textTransform: 'uppercase', marginBottom: 8 }}>DKIM</div>
-                                            {renderAuthBadge(result.auth_results.dkim)}
+                                    {result.spf === 'Not Available' && (
+                                        <div className="mt-3 text-muted" style={{ fontSize: '0.75rem' }}>
+                                            * Authentication results are not available.
                                         </div>
-                                    </div>
-                                    <div className="col-md-4">
-                                        <div className="p-3 rounded" style={{ background: 'var(--tl-bg-surface)' }}>
-                                            <div style={{ color: 'var(--tl-text-faint)', fontSize: '0.75rem', textTransform: 'uppercase', marginBottom: 8 }}>DMARC</div>
-                                            {renderAuthBadge(result.auth_results.dmarc)}
-                                        </div>
+                                    )}
+                                </div>
+                            ) : (
+                                <div className="tl-card p-4">
+                                    <h6 style={{ fontWeight: 600, color: 'var(--tl-text-primary)', marginBottom: '1.5rem' }}>Authentication Analysis</h6>
+                                    <div className="d-flex align-items-center gap-2 p-3 rounded" style={{ background: 'var(--tl-bg-surface)', color: 'var(--tl-text-secondary)', fontSize: '0.875rem' }}>
+                                        <AlertTriangle size={16} />
+                                        <span><strong>Unavailable:</strong> Raw email headers were not provided. Authentication checks (SPF, DKIM, and DMARC) require complete SMTP headers.</span>
                                     </div>
                                 </div>
-                                {result.auth_results.spf === 'Not Available' && (
-                                    <div className="mt-3 text-muted" style={{ fontSize: '0.75rem' }}>
-                                        * Authentication results are not available because raw email headers were not supplied.
-                                    </div>
-                                )}
-                            </div>
+                            )}
                             
                             {/* Sender Analysis */}
                             <div className="tl-card p-4">
                                 <div className="d-flex justify-content-between align-items-center mb-4">
                                     <h6 style={{ fontWeight: 600, color: 'var(--tl-text-primary)', margin: 0 }}>Sender Analysis</h6>
-                                    {result.sender_analysis.mismatch && <Badge variant="danger">Mismatch Detected</Badge>}
                                 </div>
                                 <div className="d-flex flex-column gap-3">
                                     <div className="d-flex flex-column flex-sm-row justify-content-between p-3 rounded" style={{ background: 'var(--tl-bg-surface)' }}>
                                         <span style={{ color: 'var(--tl-text-faint)' }}>Envelope From (Return-Path)</span>
-                                        <span style={{ color: 'var(--tl-text-primary)', fontWeight: 500 }}>{result.sender_analysis.envelope_from}</span>
+                                        <span style={{ color: 'var(--tl-text-primary)', fontWeight: 500 }}>{result.return_path}</span>
                                     </div>
                                     <div className="d-flex flex-column flex-sm-row justify-content-between p-3 rounded" style={{ background: 'var(--tl-bg-surface)' }}>
                                         <span style={{ color: 'var(--tl-text-faint)' }}>Header From</span>
-                                        <span style={{ color: result.sender_analysis.mismatch ? 'var(--tl-danger)' : 'var(--tl-text-primary)', fontWeight: 500 }}>{result.sender_analysis.header_from}</span>
+                                        <span style={{ color: 'var(--tl-text-primary)', fontWeight: 500 }}>{result.sender}</span>
                                     </div>
                                     <div className="d-flex flex-column flex-sm-row justify-content-between p-3 rounded" style={{ background: 'var(--tl-bg-surface)' }}>
                                         <span style={{ color: 'var(--tl-text-faint)' }}>Reply-To</span>
-                                        <span style={{ color: 'var(--tl-text-primary)', fontWeight: 500 }}>{result.sender_analysis.reply_to || 'Not specified'}</span>
+                                        <span style={{ color: 'var(--tl-text-primary)', fontWeight: 500 }}>{result.reply_to}</span>
                                     </div>
                                 </div>
                             </div>
@@ -342,7 +351,7 @@ export default function EmailInvestigation() {
                                     <Server size={18} color="var(--tl-primary-light)" />
                                     <h6 style={{ fontWeight: 600, color: 'var(--tl-text-primary)', margin: 0 }}>Extracted Entities (IOCs)</h6>
                                 </div>
-                                {result.iocs.length > 0 ? (
+                                {result.extracted_iocs.length > 0 ? (
                                     <div className="table-responsive">
                                         <table className="table table-dark table-hover mb-0" style={{ background: 'transparent' }}>
                                             <thead>
@@ -353,7 +362,7 @@ export default function EmailInvestigation() {
                                                 </tr>
                                             </thead>
                                             <tbody>
-                                                {result.iocs.map((ioc, i) => (
+                                                {result.extracted_iocs.map((ioc, i) => (
                                                     <tr key={i} style={{ verticalAlign: 'middle' }}>
                                                         <td style={{ borderColor: 'var(--tl-border)', color: 'var(--tl-text-primary)' }}>
                                                             <div className="d-flex align-items-center gap-2">
