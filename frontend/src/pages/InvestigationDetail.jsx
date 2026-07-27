@@ -106,7 +106,7 @@ const EmailReportSections = ({ data }) => (
       </SectionCard>
     )}
 
-    {data?.input_mode === 'Raw Headers' ? (
+    {data?.input_mode === 'Raw Headers' && data?.spf !== 'Not Provided' ? (
       <SectionCard title="Domain Authentication" icon={<ShieldAlert size={16} color="var(--tl-primary-light)" />}>
         {['spf', 'dkim', 'dmarc'].map(key => (
           <div key={key} className="d-flex justify-content-between align-items-center py-2" style={{ borderBottom: '1px solid var(--tl-border)' }}>
@@ -118,17 +118,12 @@ const EmailReportSections = ({ data }) => (
               : <Badge variant="outline">{data?.[key] ?? 'Unavailable'}</Badge>}
           </div>
         ))}
-        {data?.spf === 'Not Available' && (
-          <div className="mt-3 text-muted" style={{ fontSize: '0.75rem' }}>
-              * Authentication results are not available.
-          </div>
-        )}
       </SectionCard>
     ) : (
       <SectionCard title="Authentication Analysis" icon={<ShieldAlert size={16} color="var(--tl-primary-light)" />}>
         <div className="d-flex align-items-center gap-2 p-3 rounded" style={{ background: 'var(--tl-bg-surface)', color: 'var(--tl-text-secondary)', fontSize: '0.875rem' }}>
             <AlertTriangle size={16} />
-            <span><strong>Unavailable:</strong> Raw email headers were not provided. Authentication checks (SPF, DKIM, and DMARC) require complete SMTP headers.</span>
+            <span><strong>Unavailable:</strong> Complete SMTP headers were not supplied. Authentication checks (SPF, DKIM, and DMARC) require complete original headers.</span>
         </div>
       </SectionCard>
     )}

@@ -50,6 +50,8 @@ class EmailInvestigatorService:
         
         if raw_headers:
             input_mode = "Raw Headers"
+            # Pre-process raw headers to fix flexible whitespace before colon (e.g. "subject : test" -> "subject: test")
+            raw_headers = re.sub(r'^([A-Za-z0-9_-]+)\s+:', r'\1:', raw_headers, flags=re.MULTILINE)
             # Parse raw headers using Python's email library
             msg = email.message_from_string(raw_headers, policy=policy.default)
             
@@ -65,18 +67,23 @@ class EmailInvestigatorService:
             content_type = msg.get('Content-Type', 'Not Provided')
             
             received_headers = msg.get_all('Received', [])
+            
+            # Security (TLS)
+            security_tls = msg.get('Security', 'Not Provided')
+            
             if received_headers:
                 received_chain = received_headers
                 # Extract Originating IP
                 ip_match = re.search(r'\[(\d{1,3}\.\d{1,3}\.\d{1,3}\.\d{1,3})\]', received_headers[-1])
                 if ip_match:
                     originating_ip = ip_match.group(1)
-                # Extract TLS Security
-                for rh in received_headers:
-                    tls_match = re.search(r'(TLS[\w.]+.*?cipher.*?)(?:\s|\)|$)', rh, re.IGNORECASE)
-                    if tls_match:
-                        security_tls = tls_match.group(1).strip()
-                        break
+                # Extract TLS Security if not provided as explicit header
+                if security_tls == 'Not Provided':
+                    for rh in received_headers:
+                        tls_match = re.search(r'(TLS[\w.]+.*?cipher.*?)(?:\s|\)|$)', rh, re.IGNORECASE)
+                        if tls_match:
+                            security_tls = tls_match.group(1).strip()
+                            break
             
             sender_analysis["header_from"] = h_from
             sender_analysis["reply_to"] = h_reply_to
@@ -92,19 +99,23 @@ class EmailInvestigatorService:
                 indicators.append("Mismatch between Envelope From (Return-Path) and Header From")
                 
             # Mailed-By
-            if env_from_email:
-                mailed_by = env_from_email.split('@')[-1].lower()
-            google_mailed_by = msg.get('X-Google-Mailed-By')
-            if google_mailed_by:
-                mailed_by = google_mailed_by.strip()
+            mailed_by = msg.get('Mailed-By', 'Not Provided')
+            if mailed_by == 'Not Provided':
+                if env_from_email:
+                    mailed_by = env_from_email.split('@')[-1].lower()
+                google_mailed_by = msg.get('X-Google-Mailed-By')
+                if google_mailed_by:
+                    mailed_by = google_mailed_by.strip()
                 
             # Signed-By (DKIM d=)
-            dkim_headers = msg.get_all('DKIM-Signature', [])
-            for dh in dkim_headers:
-                d_match = re.search(r'\bd=([^;\s]+)', dh)
-                if d_match:
-                    signed_by = d_match.group(1).strip()
-                    break
+            signed_by = msg.get('Signed-By', 'Not Provided')
+            if signed_by == 'Not Provided':
+                dkim_headers = msg.get_all('DKIM-Signature', [])
+                for dh in dkim_headers:
+                    d_match = re.search(r'\bd=([^;\s]+)', dh)
+                    if d_match:
+                        signed_by = d_match.group(1).strip()
+                        break
 
             # Parse Authentication-Results / Received-SPF
             auth_header_val = str(msg.get('Authentication-Results', ''))

@@ -280,7 +280,7 @@ export default function EmailInvestigation() {
                         <div className="col-12 col-xl-8 d-flex flex-column gap-4">
                             
                             {/* Email Authentication */}
-                            {result.input_mode === 'Raw Headers' ? (
+                            {result.input_mode === 'Raw Headers' && result.spf !== 'Not Provided' ? (
                                 <div className="tl-card p-4">
                                     <h6 style={{ fontWeight: 600, color: 'var(--tl-text-primary)', marginBottom: '1.5rem' }}>Domain Authentication</h6>
                                     <div className="row g-3">
@@ -303,18 +303,13 @@ export default function EmailInvestigation() {
                                             </div>
                                         </div>
                                     </div>
-                                    {result.spf === 'Not Available' && (
-                                        <div className="mt-3 text-muted" style={{ fontSize: '0.75rem' }}>
-                                            * Authentication results are not available.
-                                        </div>
-                                    )}
                                 </div>
                             ) : (
                                 <div className="tl-card p-4">
                                     <h6 style={{ fontWeight: 600, color: 'var(--tl-text-primary)', marginBottom: '1.5rem' }}>Authentication Analysis</h6>
                                     <div className="d-flex align-items-center gap-2 p-3 rounded" style={{ background: 'var(--tl-bg-surface)', color: 'var(--tl-text-secondary)', fontSize: '0.875rem' }}>
                                         <AlertTriangle size={16} />
-                                        <span><strong>Unavailable:</strong> Raw email headers were not provided. Authentication checks (SPF, DKIM, and DMARC) require complete SMTP headers.</span>
+                                        <span><strong>Unavailable:</strong> Complete SMTP headers were not supplied. Authentication checks (SPF, DKIM, and DMARC) require complete original headers.</span>
                                     </div>
                                 </div>
                             )}
