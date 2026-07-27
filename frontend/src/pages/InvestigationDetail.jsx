@@ -89,13 +89,22 @@ const SectionCard = ({ title, icon, children }) => (
 
 const EmailReportSections = ({ data }) => (
   <>
-    <SectionCard title="Sender Analysis" icon={<Mail size={16} color="var(--tl-primary-light)" />}>
-      <InfoRow label="Envelope From" value={data?.return_path} />
-      <InfoRow label="Header From" value={data?.sender} />
-      <InfoRow label="Reply-To" value={data?.reply_to} />
-      <InfoRow label="Subject" value={data?.subject} />
+    <SectionCard title="Email Details" icon={<Mail size={16} color="var(--tl-primary-light)" />}>
+      <InfoRow label="Sender" value={data?.sender} />
       <InfoRow label="Recipient" value={data?.recipient} />
+      <InfoRow label="Subject" value={data?.subject} />
+      <InfoRow label="Date" value={data?.date} />
+      <InfoRow label="Reply-To" value={data?.reply_to} />
+      <InfoRow label="Return-Path" value={data?.return_path} />
     </SectionCard>
+
+    {data?.input_mode === 'Raw Headers' && (data?.mailed_by !== 'Not Provided' || data?.signed_by !== 'Not Provided' || data?.security_tls !== 'Not Provided') && (
+      <SectionCard title="Mail Infrastructure" icon={<Globe size={16} color="var(--tl-primary-light)" />}>
+        <InfoRow label="Mailed By" value={data?.mailed_by} />
+        <InfoRow label="Signed By" value={data?.signed_by} />
+        <InfoRow label="Connection Security" value={data?.security_tls} />
+      </SectionCard>
+    )}
 
     {data?.input_mode === 'Raw Headers' ? (
       <SectionCard title="Domain Authentication" icon={<ShieldAlert size={16} color="var(--tl-primary-light)" />}>

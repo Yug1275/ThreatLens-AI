@@ -319,26 +319,61 @@ export default function EmailInvestigation() {
                                 </div>
                             )}
                             
-                            {/* Sender Analysis */}
+                            {/* Email Details */}
                             <div className="tl-card p-4">
                                 <div className="d-flex justify-content-between align-items-center mb-4">
-                                    <h6 style={{ fontWeight: 600, color: 'var(--tl-text-primary)', margin: 0 }}>Sender Analysis</h6>
+                                    <h6 style={{ fontWeight: 600, color: 'var(--tl-text-primary)', margin: 0 }}>Email Details</h6>
                                 </div>
                                 <div className="d-flex flex-column gap-3">
                                     <div className="d-flex flex-column flex-sm-row justify-content-between p-3 rounded" style={{ background: 'var(--tl-bg-surface)' }}>
-                                        <span style={{ color: 'var(--tl-text-faint)' }}>Envelope From (Return-Path)</span>
-                                        <span style={{ color: 'var(--tl-text-primary)', fontWeight: 500 }}>{result.return_path}</span>
+                                        <span style={{ color: 'var(--tl-text-faint)' }}>Sender</span>
+                                        <span style={{ color: 'var(--tl-text-primary)', fontWeight: 500 }}>{result.sender}</span>
                                     </div>
                                     <div className="d-flex flex-column flex-sm-row justify-content-between p-3 rounded" style={{ background: 'var(--tl-bg-surface)' }}>
-                                        <span style={{ color: 'var(--tl-text-faint)' }}>Header From</span>
-                                        <span style={{ color: 'var(--tl-text-primary)', fontWeight: 500 }}>{result.sender}</span>
+                                        <span style={{ color: 'var(--tl-text-faint)' }}>Recipient</span>
+                                        <span style={{ color: 'var(--tl-text-primary)', fontWeight: 500 }}>{result.recipient}</span>
+                                    </div>
+                                    <div className="d-flex flex-column flex-sm-row justify-content-between p-3 rounded" style={{ background: 'var(--tl-bg-surface)' }}>
+                                        <span style={{ color: 'var(--tl-text-faint)' }}>Subject</span>
+                                        <span style={{ color: 'var(--tl-text-primary)', fontWeight: 500 }}>{result.subject}</span>
+                                    </div>
+                                    <div className="d-flex flex-column flex-sm-row justify-content-between p-3 rounded" style={{ background: 'var(--tl-bg-surface)' }}>
+                                        <span style={{ color: 'var(--tl-text-faint)' }}>Date</span>
+                                        <span style={{ color: 'var(--tl-text-primary)', fontWeight: 500 }}>{result.date}</span>
                                     </div>
                                     <div className="d-flex flex-column flex-sm-row justify-content-between p-3 rounded" style={{ background: 'var(--tl-bg-surface)' }}>
                                         <span style={{ color: 'var(--tl-text-faint)' }}>Reply-To</span>
                                         <span style={{ color: 'var(--tl-text-primary)', fontWeight: 500 }}>{result.reply_to}</span>
                                     </div>
+                                    <div className="d-flex flex-column flex-sm-row justify-content-between p-3 rounded" style={{ background: 'var(--tl-bg-surface)' }}>
+                                        <span style={{ color: 'var(--tl-text-faint)' }}>Envelope From (Return-Path)</span>
+                                        <span style={{ color: 'var(--tl-text-primary)', fontWeight: 500 }}>{result.return_path}</span>
+                                    </div>
                                 </div>
                             </div>
+
+                            {/* Mail Infrastructure */}
+                            {result.input_mode === 'Raw Headers' && (result.mailed_by !== 'Not Provided' || result.signed_by !== 'Not Provided' || result.security_tls !== 'Not Provided') && (
+                                <div className="tl-card p-4">
+                                    <div className="d-flex justify-content-between align-items-center mb-4">
+                                        <h6 style={{ fontWeight: 600, color: 'var(--tl-text-primary)', margin: 0 }}>Mail Infrastructure</h6>
+                                    </div>
+                                    <div className="d-flex flex-column gap-3">
+                                        <div className="d-flex flex-column flex-sm-row justify-content-between p-3 rounded" style={{ background: 'var(--tl-bg-surface)' }}>
+                                            <span style={{ color: 'var(--tl-text-faint)' }}>Mailed By</span>
+                                            <span style={{ color: 'var(--tl-text-primary)', fontWeight: 500 }}>{result.mailed_by}</span>
+                                        </div>
+                                        <div className="d-flex flex-column flex-sm-row justify-content-between p-3 rounded" style={{ background: 'var(--tl-bg-surface)' }}>
+                                            <span style={{ color: 'var(--tl-text-faint)' }}>Signed By</span>
+                                            <span style={{ color: 'var(--tl-text-primary)', fontWeight: 500 }}>{result.signed_by}</span>
+                                        </div>
+                                        <div className="d-flex flex-column flex-sm-row justify-content-between p-3 rounded" style={{ background: 'var(--tl-bg-surface)' }}>
+                                            <span style={{ color: 'var(--tl-text-faint)' }}>Connection Security</span>
+                                            <span style={{ color: 'var(--tl-text-primary)', fontWeight: 500 }}>{result.security_tls}</span>
+                                        </div>
+                                    </div>
+                                </div>
+                            )}
 
                         </div>
                     </div>

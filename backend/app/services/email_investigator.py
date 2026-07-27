@@ -1,7 +1,6 @@
 import re
 import email
 from email import policy
-from email.parser import Parser
 from typing import Dict, Any, List
 
 class EmailInvestigatorService:
@@ -36,10 +35,18 @@ class EmailInvestigatorService:
         input_mode = "Structured Email"
         h_subject = "Not Provided"
         recipient = "Not Provided"
+        date = "Not Provided"
         auth_header = "Not Provided"
         received_chain = []
         message_id = "Not Provided"
         originating_ip = "Not Provided"
+        
+        # New Gmail fields
+        mailed_by = "Not Provided"
+        signed_by = "Not Provided"
+        security_tls = "Not Provided"
+        mime_version = "Not Provided"
+        content_type = "Not Provided"
         
         if raw_headers:
             input_mode = "Raw Headers"
@@ -53,14 +60,23 @@ class EmailInvestigatorService:
             h_return_path = msg.get('Return-Path', 'Not Provided')
             recipient = msg.get('To', 'Not Provided')
             message_id = msg.get('Message-ID', 'Not Provided')
+            date = msg.get('Date', 'Not Provided')
+            mime_version = msg.get('MIME-Version', 'Not Provided')
+            content_type = msg.get('Content-Type', 'Not Provided')
             
             received_headers = msg.get_all('Received', [])
             if received_headers:
                 received_chain = received_headers
-                # Basic originating IP extraction from first received header
+                # Extract Originating IP
                 ip_match = re.search(r'\[(\d{1,3}\.\d{1,3}\.\d{1,3}\.\d{1,3})\]', received_headers[-1])
                 if ip_match:
                     originating_ip = ip_match.group(1)
+                # Extract TLS Security
+                for rh in received_headers:
+                    tls_match = re.search(r'(TLS[\w.]+.*?cipher.*?)(?:\s|\)|$)', rh, re.IGNORECASE)
+                    if tls_match:
+                        security_tls = tls_match.group(1).strip()
+                        break
             
             sender_analysis["header_from"] = h_from
             sender_analysis["reply_to"] = h_reply_to
@@ -73,24 +89,61 @@ class EmailInvestigatorService:
             if h_from_email and env_from_email and h_from_email.lower() != env_from_email.lower():
                 sender_analysis["mismatch"] = True
                 threat_score += 20
-                indicators.append("Mismatch between Envelope From and Header From")
+                indicators.append("Mismatch between Envelope From (Return-Path) and Header From")
                 
-            # Parse Authentication-Results
+            # Mailed-By
+            if env_from_email:
+                mailed_by = env_from_email.split('@')[-1].lower()
+            google_mailed_by = msg.get('X-Google-Mailed-By')
+            if google_mailed_by:
+                mailed_by = google_mailed_by.strip()
+                
+            # Signed-By (DKIM d=)
+            dkim_headers = msg.get_all('DKIM-Signature', [])
+            for dh in dkim_headers:
+                d_match = re.search(r'\bd=([^;\s]+)', dh)
+                if d_match:
+                    signed_by = d_match.group(1).strip()
+                    break
+
+            # Parse Authentication-Results / Received-SPF
             auth_header_val = str(msg.get('Authentication-Results', ''))
             auth_header = auth_header_val if auth_header_val else "Not Provided"
-            
             auth_lower = auth_header_val.lower()
-            if auth_lower:
-                auth_results["spf"] = "Pass" if "spf=pass" in auth_lower else ("Fail" if "spf=" in auth_lower else "Not Available")
-                auth_results["dkim"] = "Pass" if "dkim=pass" in auth_lower else ("Fail" if "dkim=" in auth_lower else "Not Available")
-                auth_results["dmarc"] = "Pass" if "dmarc=pass" in auth_lower else ("Fail" if "dmarc=" in auth_lower else "Not Available")
+            
+            received_spf = str(msg.get('Received-SPF', '')).lower()
+            
+            # Determine SPF
+            if "spf=pass" in auth_lower or received_spf.startswith("pass"):
+                auth_results["spf"] = "Pass"
+            elif "spf=fail" in auth_lower or "spf=softfail" in auth_lower or received_spf.startswith("fail") or received_spf.startswith("softfail"):
+                auth_results["spf"] = "Fail"
+            elif auth_lower or received_spf:
+                auth_results["spf"] = "None"
+            
+            # Determine DKIM
+            if "dkim=pass" in auth_lower:
+                auth_results["dkim"] = "Pass"
+            elif "dkim=fail" in auth_lower:
+                auth_results["dkim"] = "Fail"
+            elif auth_lower:
+                auth_results["dkim"] = "None"
                 
-                # Penalize failures
-                if auth_results["spf"] == "Fail": threat_score += 20; indicators.append("SPF Authentication Failed")
-                if auth_results["dkim"] == "Fail": threat_score += 20; indicators.append("DKIM Authentication Failed")
-                if auth_results["dmarc"] == "Fail": threat_score += 20; indicators.append("DMARC Authentication Failed")
-            else:
-                indicators.append("Authentication-Results header missing")
+            # Determine DMARC
+            if "dmarc=pass" in auth_lower:
+                auth_results["dmarc"] = "Pass"
+            elif "dmarc=fail" in auth_lower:
+                auth_results["dmarc"] = "Fail"
+            elif auth_lower:
+                auth_results["dmarc"] = "None"
+                
+            # Penalize failures
+            if auth_results["spf"] == "Fail": threat_score += 20; indicators.append("SPF Authentication Failed")
+            if auth_results["dkim"] == "Fail": threat_score += 20; indicators.append("DKIM Authentication Failed")
+            if auth_results["dmarc"] == "Fail": threat_score += 20; indicators.append("DMARC Authentication Failed")
+            
+            if not auth_lower and not received_spf:
+                indicators.append("Authentication headers missing (No SPF/DKIM/DMARC found)")
                 auth_results["spf"] = "Not Provided"
                 auth_results["dkim"] = "Not Provided"
                 auth_results["dmarc"] = "Not Provided"
@@ -111,14 +164,26 @@ class EmailInvestigatorService:
             sender_analysis["envelope_from"] = "Not Provided"
             sender_analysis["reply_to"] = "Not Provided"
             h_subject = subject or "Not Provided"
+            # Date can be assumed current if none provided in structured, but better left as Not Provided if we don't have it
+            date = "Not Provided" 
             indicators.append("Authentication skipped: Raw email headers were not supplied.")
             full_text = f"{sender_email}\n{subject}\n{body}"
             
-        # Typosquatting Detection
+        # Typosquatting & Mismatch Detection
         header_email = cls._extract_email_address(sender_analysis["header_from"])
         sender_domain = "Not Provided"
         if header_email:
             sender_domain = header_email.split('@')[-1].lower()
+            
+            # Domain mismatches
+            if signed_by != "Not Provided" and sender_domain != signed_by:
+                threat_score += 15
+                indicators.append(f"Domain Mismatch: Header From ({sender_domain}) does not match Signed-By ({signed_by})")
+                
+            if mailed_by != "Not Provided" and sender_domain != mailed_by and mailed_by != signed_by:
+                threat_score += 15
+                indicators.append(f"Domain Mismatch: Header From ({sender_domain}) does not match Mailed-By ({mailed_by})")
+            
             domain = sender_domain
             if domain not in cls.TARGET_DOMAINS:
                 # Check similarity
@@ -154,6 +219,13 @@ class EmailInvestigatorService:
             "reply_to": sender_analysis["reply_to"],
             "return_path": sender_analysis["envelope_from"],
             "recipient": recipient,
+            "date": date,
+            
+            "mailed_by": mailed_by,
+            "signed_by": signed_by,
+            "security_tls": security_tls,
+            "mime_version": mime_version,
+            "content_type": content_type,
             
             "spf": auth_results["spf"],
             "dkim": auth_results["dkim"],
@@ -183,20 +255,16 @@ class EmailInvestigatorService:
     @staticmethod
     def _extract_email_address(text: str) -> str:
         if not text or text == "Not Provided": return ""
-        match = re.search(r'[\w\.-]+@[\w\.-]+\.\w+', text)
+        # Using word boundary equivalent to avoid partial matching
+        match = re.search(r'\b[A-Za-z0-9._%+-]+@[A-Za-z0-9.-]+\.[A-Za-z]{2,}\b', text)
         return match.group(0) if match else ""
         
     @staticmethod
     def _is_typosquat(domain: str, target: str) -> bool:
-        # Simple heuristic for typosquatting (e.g. amaz0n.com vs amazon.com)
         if domain == target:
             return False
-            
-        # If lengths are drastically different, probably not typosquat
         if abs(len(domain) - len(target)) > 2:
             return False
-            
-        # Levenshtein distance simplified
         def levenshtein(s1, s2):
             if len(s1) < len(s2):
                 return levenshtein(s2, s1)
@@ -229,15 +297,14 @@ class EmailInvestigatorService:
                 seen.add(u)
                 
         # Domains (extracted from emails or standalone)
-        # simplified domain extraction for demo
         domain_pattern = r'(?<=@)[a-zA-Z0-9-]+\.[a-zA-Z0-9-.]+'
         for d in set(re.findall(domain_pattern, text)):
             if d not in seen:
                 iocs.append({"type": "Domain", "value": d})
                 seen.add(d)
             
-        # Emails
-        email_pattern = r'[a-zA-Z0-9_.+-]+@[a-zA-Z0-9-]+\.[a-zA-Z0-9-.]+'
+        # Emails with word boundaries
+        email_pattern = r'\b[A-Za-z0-9._%+-]+@[A-Za-z0-9.-]+\.[A-Za-z]{2,}\b'
         for e in set(re.findall(email_pattern, text)):
             if e not in seen:
                 iocs.append({"type": "Email", "value": e})
@@ -246,7 +313,8 @@ class EmailInvestigatorService:
         # Phones
         phone_pattern = r'(?:\+?\d{1,3}[-.\s]?)?\(?\d{3}\)?[-.\s]?\d{3}[-.\s]?\d{4}'
         for p in set(re.findall(phone_pattern, text)):
-            if p not in seen:
+            # simple len check to avoid noise
+            if p not in seen and len(re.sub(r'\D', '', p)) >= 10:
                 iocs.append({"type": "Phone", "value": p})
                 seen.add(p)
                 
