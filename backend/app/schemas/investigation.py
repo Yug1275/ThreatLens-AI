@@ -77,3 +77,23 @@ class InvestigationUpdate(BaseModel):
 class BulkDeleteRequest(BaseModel):
     """Payload for batch deletion."""
     ids: List[str]
+
+
+class RiskDistributionItem(BaseModel):
+    name: str
+    value: int
+
+
+class TopTargetItem(BaseModel):
+    target: str
+    count: int
+
+
+class TypeDistributionItem(BaseModel):
+    name: str
+    value: int
+
+
+class ProductivityDataPoint(BaseModel):
+    date: str
+    count: int

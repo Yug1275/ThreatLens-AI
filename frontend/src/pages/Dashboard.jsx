@@ -4,10 +4,11 @@ import { useNavigate } from 'react-router-dom';
 import { motion } from 'framer-motion';
 import { 
   Search, ShieldAlert, Activity, AlertTriangle, ArrowUpRight, ArrowDownRight,
-  ArrowRight, Crosshair, FileText, TrendingUp, Clock, ExternalLink
+  ArrowRight, Crosshair, FileText, TrendingUp, Clock, ExternalLink, Target, PieChart as PieChartIcon
 } from 'lucide-react';
 import { 
-  AreaChart, Area, XAxis, YAxis, CartesianGrid, Tooltip as RechartsTooltip, ResponsiveContainer
+  AreaChart, Area, XAxis, YAxis, CartesianGrid, Tooltip as RechartsTooltip, ResponsiveContainer,
+  PieChart, Pie, Cell, BarChart, Bar, Legend
 } from 'recharts';
 import api from '../utils/axios';
 
@@ -23,11 +24,12 @@ const CustomTooltip = ({ active, payload, label }) => {
     <div style={{
       background: 'var(--tl-bg-surface)', border: '1px solid var(--tl-border)',
       borderRadius: 'var(--tl-radius-sm)', padding: '0.75rem', boxShadow: 'var(--tl-shadow-lg)',
+      zIndex: 100
     }}>
       <div style={{ fontWeight: 600, color: 'var(--tl-text-primary)', marginBottom: '0.25rem', fontSize: '0.8125rem' }}>{label}</div>
       {payload.map((entry, i) => (
-        <div key={i} style={{ display: 'flex', alignItems: 'center', gap: '0.5rem', fontSize: '0.75rem', color: entry.color }}>
-          <span style={{ width: 8, height: 8, borderRadius: '50%', background: entry.color, display: 'inline-block' }} />
+        <div key={i} style={{ display: 'flex', alignItems: 'center', gap: '0.5rem', fontSize: '0.75rem', color: entry.color || entry.payload.fill || 'var(--tl-text-primary)' }}>
+          <span style={{ width: 8, height: 8, borderRadius: '50%', background: entry.color || entry.payload.fill || 'var(--tl-primary)', display: 'inline-block' }} />
           {entry.name}: {entry.value}
         </div>
       ))}
@@ -54,18 +56,28 @@ function scoreToStatus(score) {
   return 'SAFE';
 }
 
+const RISK_COLORS = { Malicious: '#EF4444', Suspicious: '#F59E0B', Safe: '#10B981' };
+const TYPE_COLORS = { URL: '#3B82F6', EMAIL: '#10B981', PHONE: '#8B5CF6', OCR: '#06B6D4', QR: '#F59E0B' };
+
 export default function Dashboard() {
   const { user } = useContext(AuthContext);
   const navigate = useNavigate();
   const [stats, setStats] = useState(null);
   const [activityData, setActivityData] = useState([]);
   const [recentInvestigations, setRecentInvestigations] = useState([]);
+  
+  // Phase 6A New State
+  const [typesData, setTypesData] = useState([]);
+  const [riskData, setRiskData] = useState([]);
+  const [topTargets, setTopTargets] = useState([]);
+  const [productivityData, setProductivityData] = useState([]);
+  
   const [loading, setLoading] = useState(true);
 
   useEffect(() => {
     const fetchData = async () => {
       try {
-        const [sRes, aRes, rRes] = await Promise.all([
+        const [sRes, aRes, rRes, tRes, riskRes, topRes, prodRes] = await Promise.all([
           api.get('/api/v1/dashboard/stats').catch(() => ({ data: { total: 0, malicious: 0, safe: 0, suspicious: 0, pending: 0 } })),
           api.get('/api/v1/dashboard/activity').catch(() => ({ data: [
             { name: 'Mon', malicious: 0, safe: 0 }, { name: 'Tue', malicious: 0, safe: 0 },
@@ -74,10 +86,18 @@ export default function Dashboard() {
             { name: 'Sun', malicious: 0, safe: 0 },
           ] })),
           api.get('/api/v1/dashboard/recent').catch(() => ({ data: [] })),
+          api.get('/api/v1/dashboard/types').catch(() => ({ data: [] })),
+          api.get('/api/v1/dashboard/risk').catch(() => ({ data: [] })),
+          api.get('/api/v1/dashboard/top-targets').catch(() => ({ data: [] })),
+          api.get('/api/v1/dashboard/productivity').catch(() => ({ data: [] })),
         ]);
         setStats(sRes.data);
         setActivityData(aRes.data);
         setRecentInvestigations(rRes.data);
+        setTypesData(tRes.data);
+        setRiskData(riskRes.data);
+        setTopTargets(topRes.data);
+        setProductivityData(prodRes.data);
       } catch (e) { console.error(e); } finally { setLoading(false); }
     };
     fetchData();
@@ -115,7 +135,7 @@ export default function Dashboard() {
               <p style={{ color: 'var(--tl-text-muted)', marginBottom: '1.25rem', maxWidth: '500px' }}>
                 Here's what's happening with your security posture today. Stay ahead of emerging threats.
               </p>
-              <button className="tl-btn tl-btn-primary">
+              <button className="tl-btn tl-btn-primary" onClick={() => navigate('/investigations/url')}>
                 <Search size={16} /> New Investigation
               </button>
             </div>
@@ -164,11 +184,7 @@ export default function Dashboard() {
           <motion.div {...fadeUp(0.3)}>
             <div className="tl-card p-4" style={{ height: '100%' }}>
               <div className="d-flex justify-content-between align-items-center mb-4">
-                <h6 style={{ fontWeight: 600, color: 'var(--tl-text-primary)', margin: 0 }}>Threat Activity</h6>
-                <select className="tl-input" style={{ width: 'auto', padding: '0.375rem 0.75rem', fontSize: '0.75rem' }}>
-                  <option>Last 7 days</option>
-                  <option>Last 30 days</option>
-                </select>
+                <h6 style={{ fontWeight: 600, color: 'var(--tl-text-primary)', margin: 0 }}>Threat Activity (Last 7 Days)</h6>
               </div>
 
               <div style={{ height: 280 }}>
@@ -205,17 +221,16 @@ export default function Dashboard() {
 
         {/* Quick Actions + Threat Feed */}
         <div className="col-12 col-lg-4 d-flex flex-column gap-4">
-          {/* Quick Actions */}
           <motion.div {...fadeUp(0.35)}>
             <div className="tl-card p-4">
               <h6 style={{ fontWeight: 600, color: 'var(--tl-text-primary)', marginBottom: '1rem' }}>Quick Actions</h6>
               <div className="d-flex flex-column gap-2">
                 {[
-                  { icon: <Crosshair size={16} />, label: 'URL Investigation', desc: 'Scan a suspicious URL' },
-                  { icon: <FileText size={16} />, label: 'Generate Report', desc: 'Create threat report' },
-                  { icon: <TrendingUp size={16} />, label: 'View Analytics', desc: 'Detailed statistics' },
+                  { icon: <Crosshair size={16} />, label: 'URL Investigation', desc: 'Scan a suspicious URL', path: '/investigations/url' },
+                  { icon: <FileText size={16} />, label: 'Generate Report', desc: 'Create threat report', path: '/reports' },
+                  { icon: <TrendingUp size={16} />, label: 'View History', desc: 'Detailed statistics', path: '/history' },
                 ].map((a, i) => (
-                  <button key={i} className="tl-nav-item" style={{ border: 'none', background: 'none', textAlign: 'left', cursor: 'pointer' }}>
+                  <button key={i} onClick={() => navigate(a.path)} className="tl-nav-item" style={{ border: 'none', background: 'none', textAlign: 'left', cursor: 'pointer' }}>
                     <div className="tl-stat-icon" style={{ width: 32, height: 32, background: 'rgba(var(--tl-primary-rgb), 0.1)', color: 'var(--tl-primary-light)' }}>
                       {a.icon}
                     </div>
@@ -239,8 +254,8 @@ export default function Dashboard() {
                     <Skeleton w="36px" h="36px" r />
                     <div style={{ flex: 1 }}><Skeleton w="70%" h="14px" /><div style={{ height: 6 }} /><Skeleton w="40%" h="12px" /></div>
                   </div>
-                )) : recentInvestigations.filter(x => (x.threat_score ?? 0) > 75).map((item, i) => (
-                  <div key={i} className="d-flex gap-3 align-items-start" style={{ paddingBottom: '0.75rem', borderBottom: '1px solid var(--tl-border)' }}>
+                )) : recentInvestigations.filter(x => (x.threat_score ?? 0) > 75).slice(0, 4).map((item, i) => (
+                  <div key={i} className="d-flex gap-3 align-items-start" style={{ paddingBottom: '0.75rem', borderBottom: i !== 3 ? '1px solid var(--tl-border)' : 'none' }}>
                     <div className="tl-stat-icon" style={{ width: 36, height: 36, background: 'rgba(var(--tl-danger-rgb), 0.1)', color: 'var(--tl-danger)', flexShrink: 0 }}>
                       <ShieldAlert size={16} />
                     </div>
@@ -258,12 +273,143 @@ export default function Dashboard() {
         </div>
       </div>
 
+      {/* Analytics Second Row: Productivity & Distribution */}
+      <div className="row g-4 mb-4">
+        <div className="col-12 col-lg-7">
+          <motion.div {...fadeUp(0.4)}>
+            <div className="tl-card p-4" style={{ height: '100%' }}>
+              <h6 style={{ fontWeight: 600, color: 'var(--tl-text-primary)', marginBottom: '1.5rem' }}>Analyst Productivity (30 Days)</h6>
+              <div style={{ height: 250 }}>
+                {loading ? (
+                  <div className="d-flex h-100 justify-content-around align-items-end gap-2 pb-2">
+                    <Skeleton w="8%" h="30%" /><Skeleton w="8%" h="60%" /><Skeleton w="8%" h="40%" />
+                    <Skeleton w="8%" h="80%" /><Skeleton w="8%" h="50%" /><Skeleton w="8%" h="90%" />
+                  </div>
+                ) : (
+                  <ResponsiveContainer width="100%" height="100%">
+                    <BarChart data={productivityData} margin={{ top: 5, right: 5, left: -20, bottom: 0 }}>
+                      <CartesianGrid strokeDasharray="3 3" stroke="rgba(148,163,184,0.08)" vertical={false} />
+                      <XAxis dataKey="date" stroke="var(--tl-text-faint)" axisLine={false} tickLine={false} dy={10} fontSize={10} interval="preserveStartEnd" minTickGap={20} />
+                      <YAxis stroke="var(--tl-text-faint)" axisLine={false} tickLine={false} fontSize={12} allowDecimals={false} />
+                      <RechartsTooltip content={<CustomTooltip />} cursor={{ fill: 'rgba(255,255,255,0.05)' }} />
+                      <Bar dataKey="count" name="Investigations" fill="var(--tl-primary-light)" radius={[4, 4, 0, 0]} />
+                    </BarChart>
+                  </ResponsiveContainer>
+                )}
+              </div>
+            </div>
+          </motion.div>
+        </div>
+
+        <div className="col-12 col-lg-5">
+          <motion.div {...fadeUp(0.42)}>
+            <div className="tl-card p-4" style={{ height: '100%' }}>
+              <h6 style={{ fontWeight: 600, color: 'var(--tl-text-primary)', marginBottom: '1.5rem' }}>Risk Distribution</h6>
+              <div style={{ height: 250, display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
+                {loading ? (
+                   <Skeleton w="200px" h="200px" r />
+                ) : (
+                  <ResponsiveContainer width="100%" height="100%">
+                    <PieChart>
+                      <Pie
+                        data={riskData}
+                        cx="50%"
+                        cy="50%"
+                        innerRadius={70}
+                        outerRadius={90}
+                        paddingAngle={5}
+                        dataKey="value"
+                        stroke="none"
+                      >
+                        {riskData.map((entry, index) => (
+                          <Cell key={`cell-${index}`} fill={RISK_COLORS[entry.name] || 'var(--tl-primary)'} />
+                        ))}
+                      </Pie>
+                      <RechartsTooltip content={<CustomTooltip />} />
+                      <Legend verticalAlign="bottom" height={36} iconType="circle" wrapperStyle={{ fontSize: '0.8125rem', color: 'var(--tl-text-secondary)' }} />
+                    </PieChart>
+                  </ResponsiveContainer>
+                )}
+              </div>
+            </div>
+          </motion.div>
+        </div>
+      </div>
+
+      {/* Third Row: Top IOCs and Investigation Types */}
+      <div className="row g-4 mb-4">
+        <div className="col-12 col-lg-6">
+           <motion.div {...fadeUp(0.44)}>
+            <div className="tl-card p-4 h-100">
+              <div className="d-flex align-items-center gap-2 mb-4">
+                <Target size={18} color="var(--tl-primary-light)" />
+                <h6 style={{ fontWeight: 600, color: 'var(--tl-text-primary)', margin: 0 }}>Top Targeted IOCs</h6>
+              </div>
+              <div className="d-flex flex-column gap-3">
+                {loading ? [1,2,3,4,5].map(i => <Skeleton key={i} h="36px" />) : topTargets.map((item, i) => (
+                  <div key={i} className="d-flex justify-content-between align-items-center p-2 rounded" style={{ background: 'var(--tl-bg-surface)', border: '1px solid var(--tl-border)' }}>
+                    <div className="d-flex align-items-center gap-3" style={{ minWidth: 0 }}>
+                      <div style={{ width: 24, height: 24, borderRadius: '50%', background: 'rgba(var(--tl-primary-rgb),0.1)', color: 'var(--tl-primary-light)', display: 'flex', alignItems: 'center', justifyContent: 'center', fontSize: '0.75rem', fontWeight: 600, flexShrink: 0 }}>
+                        {i + 1}
+                      </div>
+                      <div style={{ fontSize: '0.875rem', color: 'var(--tl-text-primary)', fontWeight: 500, overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>
+                        {item.target}
+                      </div>
+                    </div>
+                    <div style={{ fontSize: '0.8125rem', color: 'var(--tl-text-muted)', fontWeight: 600, flexShrink: 0 }}>
+                      {item.count} scans
+                    </div>
+                  </div>
+                ))}
+                {!loading && topTargets.length === 0 && <div className="text-center text-muted" style={{ fontSize: '0.875rem' }}>No targets found</div>}
+              </div>
+            </div>
+          </motion.div>
+        </div>
+        
+        <div className="col-12 col-lg-6">
+           <motion.div {...fadeUp(0.46)}>
+            <div className="tl-card p-4 h-100">
+              <div className="d-flex align-items-center gap-2 mb-4">
+                <PieChartIcon size={18} color="var(--tl-primary-light)" />
+                <h6 style={{ fontWeight: 600, color: 'var(--tl-text-primary)', margin: 0 }}>Investigation Types</h6>
+              </div>
+              <div style={{ height: 260 }}>
+                {loading ? (
+                   <div className="d-flex justify-content-center align-items-center h-100"><Skeleton w="180px" h="180px" r /></div>
+                ) : (
+                  <ResponsiveContainer width="100%" height="100%">
+                    <PieChart>
+                      <Pie
+                        data={typesData}
+                        cx="50%"
+                        cy="50%"
+                        outerRadius={90}
+                        dataKey="value"
+                        stroke="none"
+                        labelLine={false}
+                        label={({ name, percent }) => `${name} ${(percent * 100).toFixed(0)}%`}
+                      >
+                        {typesData.map((entry, index) => (
+                          <Cell key={`cell-${index}`} fill={TYPE_COLORS[entry.name] || 'var(--tl-primary-light)'} />
+                        ))}
+                      </Pie>
+                      <RechartsTooltip content={<CustomTooltip />} />
+                    </PieChart>
+                  </ResponsiveContainer>
+                )}
+              </div>
+            </div>
+          </motion.div>
+        </div>
+      </div>
+
       {/* Recent Investigations Table */}
-      <motion.div {...fadeUp(0.45)}>
+      <motion.div {...fadeUp(0.48)}>
         <div className="tl-card">
           <div className="d-flex justify-content-between align-items-center p-4" style={{ borderBottom: '1px solid var(--tl-border)' }}>
             <h6 style={{ fontWeight: 600, color: 'var(--tl-text-primary)', margin: 0 }}>Recent Investigations</h6>
-            <button className="tl-btn tl-btn-secondary tl-btn-sm">View All <ArrowRight size={14} /></button>
+            <button className="tl-btn tl-btn-secondary tl-btn-sm" onClick={() => navigate('/history')}>View All <ArrowRight size={14} /></button>
           </div>
           <div style={{ overflowX: 'auto' }}>
             {loading ? (

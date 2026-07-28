@@ -254,7 +254,57 @@ class InvestigationRepository:
             .group_by(Investigation.type)
             .all()
         )
-        return [{"type": r.type, "count": r.count} for r in rows]
+        return [{"name": r.type, "value": r.count} for r in rows]
+
+    def get_risk_distribution(self, db: Session, user_id: int) -> list[dict]:
+        """Returns count of malicious, suspicious, and safe investigations."""
+        stats = self.get_user_stats(db, user_id)
+        return [
+            {"name": "Malicious", "value": stats["malicious"]},
+            {"name": "Suspicious", "value": stats["suspicious"]},
+            {"name": "Safe", "value": stats["safe"]}
+        ]
+
+    def get_top_targets(self, db: Session, user_id: int, limit: int = 5) -> list[dict]:
+        """Returns the most frequently investigated targets."""
+        rows = (
+            db.query(Investigation.target, func.count(Investigation.id).label("count"))
+            .filter(
+                Investigation.user_id == user_id,
+                Investigation.is_deleted == False,
+                Investigation.status == "COMPLETED",
+            )
+            .group_by(Investigation.target)
+            .order_by(func.count(Investigation.id).desc())
+            .limit(limit)
+            .all()
+        )
+        return [{"target": r.target, "count": r.count} for r in rows]
+
+    def get_analyst_productivity(self, db: Session, user_id: int) -> list[dict]:
+        """Returns investigations per day over the last 30 days."""
+        result = []
+        today = datetime.now(timezone.utc).date()
+        for i in range(29, -1, -1):
+            target_date = today - timedelta(days=i)
+            start = datetime(target_date.year, target_date.month, target_date.day, tzinfo=timezone.utc)
+            end = start + timedelta(days=1)
+            count = (
+                db.query(func.count(Investigation.id))
+                .filter(
+                    Investigation.user_id == user_id,
+                    Investigation.is_deleted == False,
+                    Investigation.created_at >= start,
+                    Investigation.created_at < end,
+                )
+                .scalar()
+            )
+            result.append({
+                "date": target_date.strftime("%b %d"),
+                "count": count or 0
+            })
+        return result
 
 
 investigation_repository = InvestigationRepository()
+
