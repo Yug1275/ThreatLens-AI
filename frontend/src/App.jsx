@@ -21,6 +21,9 @@ import InvestigationHistory from './pages/InvestigationHistory';
 import InvestigationDetail from './pages/InvestigationDetail';
 import Reports from './pages/Reports';
 
+import IocRepository from './pages/IocRepository';
+import IocDetail from './pages/IocDetail';
+
 /* ——————————————— Premium Landing Page ——————————————— */
 const Home = () => (
   <div className="tl-hero">
@@ -147,6 +150,8 @@ function App() {
             <Route path="investigations/detail/:id" element={<InvestigationDetail />} />
             <Route path="history" element={<InvestigationHistory />} />
             <Route path="reports" element={<Reports />} />
+            <Route path="iocs" element={<IocRepository />} />
+            <Route path="iocs/:target" element={<IocDetail />} />
             <Route path="settings" element={<SettingsPage />} />
           </Route>
         </Routes>

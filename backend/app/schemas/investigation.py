@@ -97,3 +97,26 @@ class TypeDistributionItem(BaseModel):
 class ProductivityDataPoint(BaseModel):
     date: str
     count: int
+
+
+class IOCItem(BaseModel):
+    """Aggregated IOC from investigations table."""
+    target: str
+    type: str
+    occurrence_count: int
+    first_seen: datetime
+    last_seen: datetime
+    max_threat_score: Optional[int] = None
+
+
+class IOCListResponse(BaseModel):
+    items: List[IOCItem]
+    total: int
+    page: int
+    pages: int
+    limit: int
+
+
+class IOCDetail(BaseModel):
+    ioc: IOCItem
+    investigations: List[RecentInvestigationItem]

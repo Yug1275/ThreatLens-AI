@@ -303,8 +303,117 @@ class InvestigationRepository:
                 "date": target_date.strftime("%b %d"),
                 "count": count or 0
             })
-        return result
+    def get_iocs(
+        self,
+        db: Session,
+        user_id: int,
+        skip: int = 0,
+        limit: int = 20,
+        ioc_type: Optional[str] = None,
+        search: Optional[str] = None,
+        sort_by: Optional[str] = "last_seen",
+        sort_order: Optional[str] = "desc"
+    ) -> tuple[list[dict], int]:
+        """Groups investigations by target to form IOCs."""
+        query = (
+            db.query(
+                Investigation.target,
+                func.max(Investigation.type).label("type"),
+                func.count(Investigation.id).label("occurrence_count"),
+                func.min(Investigation.created_at).label("first_seen"),
+                func.max(Investigation.created_at).label("last_seen"),
+                func.max(Investigation.threat_score).label("max_threat_score")
+            )
+            .filter(
+                Investigation.user_id == user_id,
+                Investigation.is_deleted == False,
+                Investigation.status == "COMPLETED"
+            )
+        )
+        
+        if ioc_type:
+            query = query.filter(Investigation.type == ioc_type.upper())
+        if search:
+            query = query.filter(Investigation.target.ilike(f"%{search}%"))
+            
+        query = query.group_by(Investigation.target)
+        
+        total = query.count()
+        
+        if sort_by == "occurrence_count":
+            sort_col = func.count(Investigation.id)
+        elif sort_by == "threat_score":
+            sort_col = func.max(Investigation.threat_score)
+        elif sort_by == "first_seen":
+            sort_col = func.min(Investigation.created_at)
+        else:
+            sort_col = func.max(Investigation.created_at)
+            
+        if sort_order.lower() == "asc":
+            query = query.order_by(sort_col.asc())
+        else:
+            query = query.order_by(sort_col.desc())
+            
+        items = query.offset(skip).limit(limit).all()
+        
+        results = [{
+            "target": r.target,
+            "type": r.type,
+            "occurrence_count": r.occurrence_count,
+            "first_seen": r.first_seen,
+            "last_seen": r.last_seen,
+            "max_threat_score": r.max_threat_score
+        } for r in items]
+        
+        return results, total
 
+    def get_ioc_details(self, db: Session, user_id: int, target: str) -> dict:
+        """Fetches the IOC summary and linked investigations for a specific target."""
+        row = (
+            db.query(
+                Investigation.target,
+                func.max(Investigation.type).label("type"),
+                func.count(Investigation.id).label("occurrence_count"),
+                func.min(Investigation.created_at).label("first_seen"),
+                func.max(Investigation.created_at).label("last_seen"),
+                func.max(Investigation.threat_score).label("max_threat_score")
+            )
+            .filter(
+                Investigation.user_id == user_id,
+                Investigation.target == target,
+                Investigation.is_deleted == False,
+                Investigation.status == "COMPLETED"
+            )
+            .group_by(Investigation.target)
+            .first()
+        )
+        if not row:
+            return None
+            
+        ioc_summary = {
+            "target": row.target,
+            "type": row.type,
+            "occurrence_count": row.occurrence_count,
+            "first_seen": row.first_seen,
+            "last_seen": row.last_seen,
+            "max_threat_score": row.max_threat_score
+        }
+        
+        investigations = (
+            db.query(Investigation)
+            .filter(
+                Investigation.user_id == user_id,
+                Investigation.target == target,
+                Investigation.is_deleted == False,
+                Investigation.status == "COMPLETED"
+            )
+            .order_by(Investigation.created_at.desc())
+            .all()
+        )
+        
+        return {
+            "ioc": ioc_summary,
+            "investigations": investigations
+        }
 
 investigation_repository = InvestigationRepository()
-

@@ -49,11 +49,12 @@ app.add_middleware(
     allow_headers=["*"],
 )
 
-from app.api.v1 import auth, dashboard, investigation
+from app.api.v1 import auth, dashboard, investigation, ioc
 
 app.include_router(auth.router, prefix="/api/v1/auth", tags=["auth"])
 app.include_router(dashboard.router, prefix="/api/v1/dashboard", tags=["dashboard"])
 app.include_router(investigation.router, prefix="/api/v1/investigation", tags=["investigation"])
+app.include_router(ioc.router, prefix="/api/v1/iocs", tags=["ioc"])
 
 @app.get("/")
 def read_root():
