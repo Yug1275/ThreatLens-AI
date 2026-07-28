@@ -182,11 +182,14 @@ const EmailReportSections = ({ data }) => (
 
 const PhoneReportSections = ({ data }) => (
   <SectionCard title="Phone Intelligence" icon={<Phone size={16} color="var(--tl-primary-light)" />}>
-    <InfoRow label="Number" value={data?.phone_number} />
-    <InfoRow label="Country" value={data?.country} />
+    <InfoRow label="Number" value={data?.normalized_number} />
+    <InfoRow label="Country" value={data?.country_name} />
+    <InfoRow label="Country Code" value={data?.country_code} />
+    <InfoRow label="Region" value={data?.region} />
     <InfoRow label="Carrier" value={data?.carrier} />
     <InfoRow label="Line Type" value={data?.line_type} />
     <InfoRow label="Risk Level" value={data?.risk_level} />
+    <InfoRow label="Threat Score" value={data?.threat_score} />
   </SectionCard>
 );
 

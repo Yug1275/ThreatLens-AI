@@ -33,8 +33,10 @@ class PhoneInvestigatorService:
             national = phonenumbers.format_number(parsed, phonenumbers.PhoneNumberFormat.NATIONAL)
             
             # Geo & Carrier
-            country = geocoder.description_for_number(parsed, "en") or "Unknown"
-            phone_carrier = carrier.name_for_number(parsed, "en") or "Not Available"
+            country_name = geocoder.description_for_number(parsed, "en") or "Unknown"
+            region_code = phonenumbers.region_code_for_number(parsed) or "Unknown"
+            phone_carrier = carrier.name_for_number(parsed, "en") or "Unavailable"
+            country_code = f"+{parsed.country_code}"
             timeline.append("Carrier Lookup Completed")
             
             # Type
@@ -54,27 +56,51 @@ class PhoneInvestigatorService:
                 
             # High risk countries (demo list)
             high_risk_countries = ["Nigeria", "Somalia", "Russia", "North Korea"]
-            if country in high_risk_countries:
+            if country_name in high_risk_countries:
                 threat_score += 25
-                indicators.append(f"High-Risk Country Code ({country})")
+                indicators.append(f"High-Risk Country Code ({country_name})")
                 
             timeline.append("Threat Analysis Completed")
             timeline.append("Investigation Completed")
             
             threat_score = min(threat_score, 100)
             
+            # Risk Level
+            risk_level = "Safe"
+            if threat_score > 60:
+                risk_level = "High"
+            elif threat_score > 40:
+                risk_level = "Medium"
+            elif threat_score > 20:
+                risk_level = "Low"
+                
+            # Recommendations
+            recommendations = []
+            if threat_score > 40:
+                recommendations.append("Exercise caution. This number has suspicious indicators.")
+            if p_type == PhoneNumberType.PREMIUM_RATE:
+                recommendations.append("Avoid calling this number to prevent unexpected charges.")
+            if not recommendations:
+                recommendations.append("Number appears safe, but always verify the caller's identity.")
+            
+            from datetime import datetime, timezone
+            
             return {
+                "original_number": phone_number,
+                "normalized_number": e164,
+                "e164_number": e164,
+                "international_format": intl,
+                "national_format": national,
+                "country_name": country_name,
+                "country_code": country_code,
+                "region": region_code,
+                "carrier": phone_carrier,
+                "line_type": type_str,
+                "risk_level": risk_level,
                 "threat_score": threat_score,
-                "is_suspicious": threat_score > 40,
-                "phone_info": {
-                    "e164": e164,
-                    "international": intl,
-                    "national": national,
-                    "country": country,
-                    "carrier": phone_carrier,
-                    "type": type_str
-                },
-                "indicators": indicators,
+                "matched_rules": indicators,
+                "recommendations": recommendations,
+                "investigation_timestamp": datetime.now(timezone.utc).isoformat(),
                 "timeline": timeline,
                 "summary": "AI Investigation Summary will be available in Phase 9."
             }

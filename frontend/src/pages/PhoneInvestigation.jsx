@@ -156,12 +156,12 @@ export default function PhoneInvestigation() {
                             {/* Threat Indicators */}
                             <div className="tl-card p-4 flex-grow-1">
                                 <div className="d-flex align-items-center gap-2 mb-3">
-                                    <ShieldAlert size={18} color={result.indicators.length > 0 ? "var(--tl-warning)" : "var(--tl-success)"} />
+                                    <ShieldAlert size={18} color={result.matched_rules.length > 0 ? "var(--tl-warning)" : "var(--tl-success)"} />
                                     <h6 style={{ fontWeight: 600, color: 'var(--tl-text-primary)', margin: 0 }}>Detected Indicators</h6>
                                 </div>
-                                {result.indicators.length > 0 ? (
+                                {result.matched_rules.length > 0 ? (
                                     <div className="d-flex flex-column gap-2">
-                                        {result.indicators.map((ind, i) => (
+                                        {result.matched_rules.map((ind, i) => (
                                             <div key={i} className="d-flex align-items-center gap-2 p-2 rounded" style={{ background: 'rgba(var(--tl-warning-rgb), 0.1)', color: 'var(--tl-warning)', fontSize: '0.8125rem' }}>
                                                 <AlertTriangle size={14} />
                                                 <span>{ind}</span>
@@ -191,7 +191,7 @@ export default function PhoneInvestigation() {
                                             </div>
                                             <div>
                                                 <div style={{ fontSize: '0.75rem', color: 'var(--tl-text-faint)', textTransform: 'uppercase' }}>Number Type</div>
-                                                <div style={{ fontSize: '0.875rem', color: 'var(--tl-text-primary)', fontWeight: 500 }}>{result.phone_info.type}</div>
+                                                <div style={{ fontSize: '0.875rem', color: 'var(--tl-text-primary)', fontWeight: 500 }}>{result.line_type}</div>
                                             </div>
                                         </div>
                                     </div>
@@ -202,7 +202,7 @@ export default function PhoneInvestigation() {
                                             </div>
                                             <div>
                                                 <div style={{ fontSize: '0.75rem', color: 'var(--tl-text-faint)', textTransform: 'uppercase' }}>Carrier</div>
-                                                <div style={{ fontSize: '0.875rem', color: 'var(--tl-text-primary)', fontWeight: 500 }}>{result.phone_info.carrier}</div>
+                                                <div style={{ fontSize: '0.875rem', color: 'var(--tl-text-primary)', fontWeight: 500 }}>{result.carrier}</div>
                                             </div>
                                         </div>
                                     </div>
@@ -213,7 +213,7 @@ export default function PhoneInvestigation() {
                                             </div>
                                             <div>
                                                 <div style={{ fontSize: '0.75rem', color: 'var(--tl-text-faint)', textTransform: 'uppercase' }}>Geolocation</div>
-                                                <div style={{ fontSize: '0.875rem', color: 'var(--tl-text-primary)', fontWeight: 500 }}>{result.phone_info.country}</div>
+                                                <div style={{ fontSize: '0.875rem', color: 'var(--tl-text-primary)', fontWeight: 500 }}>{result.country_name}</div>
                                             </div>
                                         </div>
                                     </div>
@@ -233,15 +233,15 @@ export default function PhoneInvestigation() {
                                 <div className="mt-4 p-3 rounded d-flex flex-column gap-3" style={{ border: '1px solid var(--tl-border)' }}>
                                     <div className="d-flex justify-content-between align-items-center">
                                         <span style={{ fontSize: '0.8125rem', color: 'var(--tl-text-muted)' }}>E.164 Format</span>
-                                        <span style={{ fontFamily: 'var(--tl-font-mono)', fontSize: '0.875rem', color: 'var(--tl-primary-light)' }}>{result.phone_info.e164}</span>
+                                        <span style={{ fontFamily: 'var(--tl-font-mono)', fontSize: '0.875rem', color: 'var(--tl-primary-light)' }}>{result.e164_number}</span>
                                     </div>
                                     <div className="d-flex justify-content-between align-items-center">
                                         <span style={{ fontSize: '0.8125rem', color: 'var(--tl-text-muted)' }}>International Format</span>
-                                        <span style={{ fontFamily: 'var(--tl-font-mono)', fontSize: '0.875rem', color: 'var(--tl-text-primary)' }}>{result.phone_info.international}</span>
+                                        <span style={{ fontFamily: 'var(--tl-font-mono)', fontSize: '0.875rem', color: 'var(--tl-text-primary)' }}>{result.international_format}</span>
                                     </div>
                                     <div className="d-flex justify-content-between align-items-center">
                                         <span style={{ fontSize: '0.8125rem', color: 'var(--tl-text-muted)' }}>National Format</span>
-                                        <span style={{ fontFamily: 'var(--tl-font-mono)', fontSize: '0.875rem', color: 'var(--tl-text-primary)' }}>{result.phone_info.national}</span>
+                                        <span style={{ fontFamily: 'var(--tl-font-mono)', fontSize: '0.875rem', color: 'var(--tl-text-primary)' }}>{result.national_format}</span>
                                     </div>
                                 </div>
                             </div>

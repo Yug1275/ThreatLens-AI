@@ -9,7 +9,7 @@ class Settings(BaseSettings):
     
     JWT_SECRET_KEY: str = os.getenv("JWT_SECRET_KEY", "super-secret-key-for-dev-only")
     JWT_ALGORITHM: str = os.getenv("JWT_ALGORITHM", "HS256")
-    ACCESS_TOKEN_EXPIRE_MINUTES: int = 60
+    ACCESS_TOKEN_EXPIRE_MINUTES: int = 1440 # Increased from 60 to 1440 (24 hours) for development
     
     GROQ_API_KEY: str | None = None
     TAVILY_API_KEY: str | None = None
