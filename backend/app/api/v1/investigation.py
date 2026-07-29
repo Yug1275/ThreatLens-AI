@@ -9,8 +9,7 @@ from typing import Optional
 from app.api.deps import get_db, get_current_user
 from app.models.user import User
 from app.repositories.investigation_repository import investigation_repository
-from app.repositories.investigation_repository import investigation_repository
-from app.schemas.investigation import InvestigationResponse, InvestigationListResponse, InvestigationUpdate, BulkDeleteRequest, BulkActionRequest
+from app.schemas.investigation import InvestigationResponse, InvestigationListResponse, InvestigationUpdate, BulkActionRequest
 from app.services.url_investigator import URLInvestigatorService
 from app.services.ocr_investigator import OCRInvestigatorService
 from app.services.qr_investigator import QRInvestigatorService
