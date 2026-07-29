@@ -189,11 +189,11 @@ export default function SettingsPage() {
                                     <Shield size={20} />
                                     <h5 className="m-0" style={{ fontWeight: 600, color: 'var(--tl-text-primary)' }}>Active Sessions</h5>
                                 </div>
-                                <p className="text-muted" style={{ fontSize: '0.9rem' }}>These devices are currently logged into your account. Revoke any sessions you do not recognize.</p>
+                                <p style={{ fontSize: '0.9rem', color: 'var(--tl-text-muted)' }}>These devices are currently logged into your account. Revoke any sessions you do not recognize.</p>
                                 
                                 <div className="d-flex flex-column gap-3 mt-4">
                                     {sessions.length === 0 ? (
-                                        <div className="text-center p-4 text-muted">No active sessions found.</div>
+                                        <div className="text-center p-4" style={{ color: 'var(--tl-text-muted)' }}>No active sessions found.</div>
                                     ) : sessions.map((sess) => (
                                         <div key={sess.id} className="d-flex justify-content-between align-items-center p-3" style={{ background: 'rgba(255,255,255,0.03)', borderRadius: 'var(--tl-radius-md)', border: '1px solid var(--tl-border)' }}>
                                             <div className="d-flex align-items-center gap-3">
@@ -234,7 +234,7 @@ export default function SettingsPage() {
                                     <Clock size={20} />
                                     <h5 className="m-0" style={{ fontWeight: 600, color: 'var(--tl-text-primary)' }}>Activity History</h5>
                                 </div>
-                                <p className="text-muted" style={{ fontSize: '0.9rem' }}>A complete audit log of your recent actions within ThreatLens AI.</p>
+                                <p style={{ fontSize: '0.9rem', color: 'var(--tl-text-muted)' }}>A complete audit log of your recent actions within ThreatLens AI.</p>
                                 
                                 <div className="mt-4 tl-table-container">
                                     <table className="tl-table w-100">
@@ -249,7 +249,7 @@ export default function SettingsPage() {
                                         <tbody>
                                             {auditLogs.length === 0 ? (
                                                 <tr>
-                                                    <td colSpan="4" className="text-center p-4 text-muted">No recent activity.</td>
+                                                    <td colSpan="4" className="text-center p-4" style={{ color: 'var(--tl-text-muted)' }}>No recent activity.</td>
                                                 </tr>
                                             ) : auditLogs.map(log => (
                                                 <tr key={log.id}>
