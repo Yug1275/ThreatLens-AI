@@ -37,7 +37,11 @@ export default function NotificationCenter() {
 
     return (
         <div className="position-relative" ref={dropdownRef}>
-            <button className="tl-navbar-icon-btn" onClick={toggleDropdown}>
+            <button 
+                className={`tl-navbar-icon-btn ${isOpen ? 'active' : ''}`} 
+                onClick={toggleDropdown}
+                style={{ outline: 'none' }}
+            >
                 <Bell size={18} />
                 {unreadCount > 0 && <span className="tl-notification-dot" style={{ position: 'absolute', top: 4, right: 6, background: 'var(--tl-danger)', width: 8, height: 8, borderRadius: '50%' }} />}
             </button>
@@ -49,22 +53,23 @@ export default function NotificationCenter() {
                         animate={{ opacity: 1, y: 0, scale: 1 }}
                         exit={{ opacity: 0, y: 10, scale: 0.95 }}
                         transition={{ duration: 0.15 }}
-                        className="tl-dropdown-menu shadow-lg"
+                        className="tl-dropdown-menu tl-glass-heavy"
                         style={{
                             position: 'absolute',
                             right: 0,
                             top: '100%',
-                            marginTop: '0.5rem',
+                            marginTop: '0.75rem',
                             width: '350px',
-                            background: 'var(--tl-bg-elevated)',
-                            border: '1px solid var(--tl-border)',
                             borderRadius: 'var(--tl-radius-md)',
                             zIndex: 1000,
-                            overflow: 'hidden'
+                            overflow: 'hidden',
+                            boxShadow: 'var(--tl-shadow-xl)'
                         }}
                     >
-                        <div className="d-flex align-items-center justify-content-between p-3" style={{ borderBottom: '1px solid var(--tl-border)' }}>
-                            <h6 className="m-0" style={{ fontWeight: 600, color: 'var(--tl-text-primary)' }}>Notifications</h6>
+                        <div className="d-flex align-items-center justify-content-between p-3" style={{ borderBottom: '1px solid var(--tl-border)', background: 'rgba(255,255,255,0.02)' }}>
+                            <h6 className="m-0" style={{ fontWeight: 600, color: 'var(--tl-text-primary)', display: 'flex', alignItems: 'center', gap: '0.5rem' }}>
+                                <Bell size={16} className="text-primary" /> Notifications
+                            </h6>
                             <div className="d-flex gap-2">
                                 {unreadCount > 0 && (
                                     <button
@@ -75,7 +80,7 @@ export default function NotificationCenter() {
                                         Mark all as read
                                     </button>
                                 )}
-                                <Link to="/settings" onClick={() => setIsOpen(false)} style={{ color: 'var(--tl-text-muted)' }}>
+                                <Link to="/settings" onClick={() => setIsOpen(false)} style={{ color: 'var(--tl-text-faint)' }} className="tl-navbar-icon-btn" style={{width: 28, height: 28}}>
                                     <Settings size={16} />
                                 </Link>
                             </div>
@@ -83,8 +88,12 @@ export default function NotificationCenter() {
 
                         <div className="tl-notification-list" style={{ maxHeight: '350px', overflowY: 'auto' }}>
                             {notifications.length === 0 ? (
-                                <div className="p-4 text-center text-muted" style={{ fontSize: '0.9rem' }}>
-                                    No notifications
+                                <div className="p-5 text-center d-flex flex-column align-items-center justify-content-center h-100">
+                                    <div style={{ width: 48, height: 48, borderRadius: '50%', background: 'rgba(255,255,255,0.03)', display: 'flex', alignItems: 'center', justifyContent: 'center', marginBottom: '1rem' }}>
+                                        <Bell size={24} style={{ color: 'var(--tl-text-faint)' }} />
+                                    </div>
+                                    <div style={{ color: 'var(--tl-text-secondary)', fontWeight: 500 }}>No notifications</div>
+                                    <div style={{ fontSize: '0.8rem', color: 'var(--tl-text-faint)' }}>You're all caught up!</div>
                                 </div>
                             ) : (
                                 notifications.map(notif => (
