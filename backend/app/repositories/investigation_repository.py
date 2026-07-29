@@ -319,6 +319,8 @@ class InvestigationRepository:
                 "date": target_date.strftime("%b %d"),
                 "count": count or 0
             })
+        return result
+
     def get_iocs(
         self,
         db: Session,
