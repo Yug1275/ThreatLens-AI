@@ -40,7 +40,7 @@ export default function DashboardLayout() {
     { name: 'Email Investigation', path: '/investigations/email', icon: Mail },
     { name: 'Phone Investigation', path: '/investigations/phone', icon: PhoneCall },
     { name: 'Reports', path: '/reports', icon: FileText },
-    { name: 'History', path: '/history', icon: History },
+    { name: 'Analyst Workspace', path: '/history', icon: History },
   ];
 
   const secondaryNav = [

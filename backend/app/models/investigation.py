@@ -23,6 +23,10 @@ class Investigation(Base):
     # Soft-delete flag — hides from user without permanent removal
     is_deleted = Column(Boolean, default=False, nullable=False)
     
+    # Workspace organization (Phase 6D)
+    folder_id = Column(String, ForeignKey("workspace_folders.id", ondelete="SET NULL"), nullable=True)
+    workflow_status = Column(String, nullable=False, default="NEW")  # NEW, IN_PROGRESS, RESOLVED, CLOSED
+    
     # Metadata for management (Phase 5D)
     name = Column(String, nullable=True)
     notes = Column(String, nullable=True)

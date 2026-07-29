@@ -69,6 +69,8 @@ class InvestigationRepository:
         sort_order: Optional[str] = "desc",
         is_favorite: Optional[bool] = None,
         is_archived: Optional[bool] = False,
+        folder_id: Optional[str] = None,
+        workflow_status: Optional[str] = None,
     ) -> tuple[list[Investigation], int]:
         """Returns (items, total_count) for pagination."""
         query = db.query(Investigation).filter(
@@ -88,6 +90,10 @@ class InvestigationRepository:
             query = query.filter(Investigation.is_favorite == is_favorite)
         if is_archived is not None:
             query = query.filter(Investigation.is_archived == is_archived)
+        if folder_id is not None:
+            query = query.filter(Investigation.folder_id == folder_id)
+        if workflow_status is not None:
+            query = query.filter(Investigation.workflow_status == workflow_status.upper())
 
         total = query.count()
         
@@ -126,13 +132,23 @@ class InvestigationRepository:
         db.commit()
         return True
 
-    def bulk_delete(self, db: Session, investigation_ids: list[str], user_id: int) -> int:
+    def bulk_soft_delete(self, db: Session, investigation_ids: list[str], user_id: int) -> int:
         """Soft deletes multiple investigations. Returns count of deleted rows."""
         result = db.query(Investigation).filter(
             Investigation.id.in_(investigation_ids),
             Investigation.user_id == user_id,
             Investigation.is_deleted == False
         ).update({"is_deleted": True}, synchronize_session=False)
+        db.commit()
+        return result
+
+    def bulk_update(self, db: Session, investigation_ids: list[str], user_id: int, update_data: dict) -> int:
+        """Updates multiple investigations with the same data. Returns count of updated rows."""
+        result = db.query(Investigation).filter(
+            Investigation.id.in_(investigation_ids),
+            Investigation.user_id == user_id,
+            Investigation.is_deleted == False
+        ).update(update_data, synchronize_session=False)
         db.commit()
         return result
 

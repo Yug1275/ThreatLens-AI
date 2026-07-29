@@ -9,7 +9,8 @@ from typing import Optional
 from app.api.deps import get_db, get_current_user
 from app.models.user import User
 from app.repositories.investigation_repository import investigation_repository
-from app.schemas.investigation import InvestigationResponse, InvestigationListResponse, InvestigationUpdate, BulkDeleteRequest
+from app.repositories.investigation_repository import investigation_repository
+from app.schemas.investigation import InvestigationResponse, InvestigationListResponse, InvestigationUpdate, BulkDeleteRequest, BulkActionRequest
 from app.services.url_investigator import URLInvestigatorService
 from app.services.ocr_investigator import OCRInvestigatorService
 from app.services.qr_investigator import QRInvestigatorService
@@ -190,11 +191,14 @@ def get_user_investigations(
     sort_order: Optional[str] = Query(default="desc", description="Sort order: asc or desc"),
     is_favorite: Optional[bool] = Query(default=None, description="Filter by favorite status"),
     is_archived: Optional[bool] = Query(default=False, description="Filter by archived status"),
+    folder_id: Optional[str] = Query(default=None, description="Filter by folder ID"),
+    workflow_status: Optional[str] = Query(default=None, description="Filter by workflow status"),
 ):
     skip = (page - 1) * limit
     items, total = investigation_repository.get_user_investigations(
         db, user_id=current_user.id, skip=skip, limit=limit, inv_type=type, status=status,
-        search=search, sort_by=sort_by, sort_order=sort_order, is_favorite=is_favorite, is_archived=is_archived
+        search=search, sort_by=sort_by, sort_order=sort_order, is_favorite=is_favorite, is_archived=is_archived,
+        folder_id=folder_id, workflow_status=workflow_status
     )
     pages = math.ceil(total / limit) if total > 0 else 1
     return InvestigationListResponse(items=items, total=total, page=page, pages=pages, limit=limit)
@@ -294,13 +298,28 @@ def delete_investigation(
         raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail="Investigation not found")
 
 
-# ── POST — Bulk delete ───────────────────────────────────────────────── #
+# ── POST — Bulk action ───────────────────────────────────────────────── #
 
-@router.post("/bulk-delete", status_code=status.HTTP_200_OK)
-def bulk_delete_investigations(
-    request: BulkDeleteRequest,
+@router.post("/bulk-action", status_code=status.HTTP_200_OK)
+def bulk_action_investigations(
+    request: BulkActionRequest,
     current_user: User = Depends(get_current_user),
     db: Session = Depends(get_db),
 ):
-    count = investigation_repository.bulk_delete(db, request.ids, current_user.id)
-    return {"deleted_count": count}
+    if request.action == "delete":
+        count = investigation_repository.bulk_soft_delete(db, request.ids, current_user.id)
+        return {"status": "success", "deleted_count": count}
+    elif request.action == "update_folder":
+        count = investigation_repository.bulk_update(db, request.ids, current_user.id, {"folder_id": request.folder_id})
+        return {"status": "success", "updated_count": count}
+    elif request.action == "update_status":
+        count = investigation_repository.bulk_update(db, request.ids, current_user.id, {"workflow_status": request.workflow_status})
+        return {"status": "success", "updated_count": count}
+    elif request.action == "archive":
+        count = investigation_repository.bulk_update(db, request.ids, current_user.id, {"is_archived": True})
+        return {"status": "success", "updated_count": count}
+    elif request.action == "unarchive":
+        count = investigation_repository.bulk_update(db, request.ids, current_user.id, {"is_archived": False})
+        return {"status": "success", "updated_count": count}
+    else:
+        raise HTTPException(status_code=400, detail=f"Unknown action {request.action}")

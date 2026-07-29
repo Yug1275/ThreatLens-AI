@@ -24,6 +24,8 @@ const investigationService = {
     if (params.sort_order) query.set('sort_order', params.sort_order);
     if (params.is_favorite !== undefined) query.set('is_favorite', params.is_favorite);
     if (params.is_archived !== undefined) query.set('is_archived', params.is_archived);
+    if (params.folder_id)  query.set('folder_id',  params.folder_id);
+    if (params.workflow_status) query.set('workflow_status', params.workflow_status);
     return api.get(`${BASE}/?${query.toString()}`).then(r => r.data);
   },
 
@@ -50,11 +52,14 @@ const investigationService = {
   updateInvestigation: (id, payload) => api.patch(`${BASE}/${id}`, payload).then(r => r.data),
 
   /**
-   * Bulk delete investigations.
+   * Bulk action on investigations.
+   * @param {string} action - 'delete', 'update_folder', 'update_status', 'archive', 'unarchive'
    * @param {string[]} ids
-   * @returns {Promise<{ deleted_count: number }>}
+   * @param {{ folder_id?: str, workflow_status?: str }} [options]
+   * @returns {Promise<{ status: string, deleted_count?: number, updated_count?: number }>}
    */
-  bulkDelete: (ids) => api.post(`${BASE}/bulk-delete`, { ids }).then(r => r.data),
+  bulkAction: (action, ids, options = {}) => 
+    api.post(`${BASE}/bulk-action`, { action, ids, ...options }).then(r => r.data),
 
   /**
    * Submit a URL investigation.

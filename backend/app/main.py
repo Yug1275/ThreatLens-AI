@@ -8,6 +8,7 @@ from app.core.config import settings
 from app.models.user import User, Profile
 from app.models.investigation import Investigation
 from app.models.notification import Notification, NotificationPreference
+from app.models.workspace import WorkspaceFolder, SavedSearch
 
 # Create any tables that don't exist yet (safe for existing tables)
 Base.metadata.create_all(bind=engine)
@@ -27,6 +28,21 @@ def _run_migrations():
                     WHERE table_name='investigations' AND column_name='is_deleted'
                 ) THEN
                     ALTER TABLE investigations ADD COLUMN is_deleted BOOLEAN NOT NULL DEFAULT FALSE;
+                END IF;
+                
+                -- Add folder_id and workflow_status (Phase 6D)
+                IF NOT EXISTS (
+                    SELECT 1 FROM information_schema.columns
+                    WHERE table_name='investigations' AND column_name='folder_id'
+                ) THEN
+                    ALTER TABLE investigations ADD COLUMN folder_id VARCHAR REFERENCES workspace_folders(id) ON DELETE SET NULL;
+                END IF;
+
+                IF NOT EXISTS (
+                    SELECT 1 FROM information_schema.columns
+                    WHERE table_name='investigations' AND column_name='workflow_status'
+                ) THEN
+                    ALTER TABLE investigations ADD COLUMN workflow_status VARCHAR NOT NULL DEFAULT 'NEW';
                 END IF;
             END$$;
         """))
@@ -50,13 +66,14 @@ app.add_middleware(
     allow_headers=["*"],
 )
 
-from app.api.v1 import auth, dashboard, investigation, ioc, notifications
+from app.api.v1 import auth, dashboard, investigation, ioc, notifications, workspace
 
 app.include_router(auth.router, prefix="/api/v1/auth", tags=["auth"])
 app.include_router(dashboard.router, prefix="/api/v1/dashboard", tags=["dashboard"])
 app.include_router(investigation.router, prefix="/api/v1/investigation", tags=["investigation"])
 app.include_router(ioc.router, prefix="/api/v1/iocs", tags=["ioc"])
 app.include_router(notifications.router, prefix="/api/v1/notifications", tags=["notifications"])
+app.include_router(workspace.router, prefix="/api/v1/workspace", tags=["workspace"])
 
 @app.get("/")
 def read_root():

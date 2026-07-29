@@ -21,6 +21,10 @@ class InvestigationResponse(BaseModel):
     tags: Optional[List[str]] = None
     is_favorite: bool = False
     is_archived: bool = False
+    
+    # Workspace organization
+    folder_id: Optional[str] = None
+    workflow_status: str = "NEW"
 
     class Config:
         from_attributes = True
@@ -72,11 +76,16 @@ class InvestigationUpdate(BaseModel):
     tags: Optional[List[str]] = None
     is_favorite: Optional[bool] = None
     is_archived: Optional[bool] = None
+    folder_id: Optional[str] = None
+    workflow_status: Optional[str] = None
 
 
-class BulkDeleteRequest(BaseModel):
-    """Payload for batch deletion."""
+class BulkActionRequest(BaseModel):
+    """Payload for batch actions (delete, update_folder, update_status, archive)."""
+    action: str  # 'delete', 'update_folder', 'update_status', 'archive', 'unarchive'
     ids: List[str]
+    folder_id: Optional[str] = None
+    workflow_status: Optional[str] = None
 
 
 class RiskDistributionItem(BaseModel):
