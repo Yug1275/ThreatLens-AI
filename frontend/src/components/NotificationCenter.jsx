@@ -53,13 +53,15 @@ export default function NotificationCenter() {
                         animate={{ opacity: 1, y: 0, scale: 1 }}
                         exit={{ opacity: 0, y: 10, scale: 0.95 }}
                         transition={{ duration: 0.15 }}
-                        className="tl-dropdown-menu tl-glass-heavy"
+                        className="tl-dropdown-menu"
                         style={{
                             position: 'absolute',
                             right: 0,
                             top: '100%',
                             marginTop: '0.75rem',
                             width: '350px',
+                            background: 'var(--tl-bg-elevated)',
+                            border: '1px solid var(--tl-border)',
                             borderRadius: 'var(--tl-radius-md)',
                             zIndex: 1000,
                             overflow: 'hidden',
