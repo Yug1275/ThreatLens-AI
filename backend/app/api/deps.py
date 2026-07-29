@@ -38,7 +38,30 @@ def get_current_user(
         raise HTTPException(status_code=404, detail="User not found")
     if not user.is_active:
         raise HTTPException(status_code=400, detail="Inactive user")
+        
+    # Check session revocation
+    from app.services.security_service import SecurityService
+    token_signature = token.split('.')[-1]
+    session = SecurityService.get_session_by_signature(db, token_signature)
+    if session and session.is_revoked:
+        raise HTTPException(status_code=status.HTTP_401_UNAUTHORIZED, detail="Session revoked")
+        
     return user
+
+class RoleChecker:
+    def __init__(self, allowed_roles: list[str]):
+        self.allowed_roles = allowed_roles
+
+    def __call__(self, user: User = Depends(get_current_user)):
+        # For this MVP, we only have 'admin' (is_superuser=True) and 'user' (is_superuser=False).
+        # We can map these conceptual roles here.
+        user_role = "admin" if user.is_superuser else "user"
+        if user_role not in self.allowed_roles:
+            raise HTTPException(
+                status_code=status.HTTP_403_FORBIDDEN,
+                detail="You do not have permission to perform this action"
+            )
+        return user
 
 def get_current_active_superuser(
     current_user: User = Depends(get_current_user),

@@ -3,6 +3,8 @@ from typing import Any
 from fastapi import APIRouter, Depends, HTTPException, status
 from fastapi.security import OAuth2PasswordRequestForm
 from sqlalchemy.orm import Session
+from datetime import datetime, timezone, timedelta
+import hashlib
 
 from app.core.database import get_db
 from app.core.security import create_access_token, verify_password, get_password_hash
@@ -15,6 +17,9 @@ from app.schemas.user import (
 )
 from app.schemas.token import Token
 from app.repositories.user_repository import user_repository
+from app.services.security_service import SecurityService
+from app.schemas.security import UserSessionCreate
+from fastapi import Request
 
 router = APIRouter()
 
@@ -37,6 +42,7 @@ def register(user_in: UserCreate, db: Session = Depends(get_db)) -> Any:
 
 @router.post("/login", response_model=Token)
 def login_access_token(
+    request: Request,
     db: Session = Depends(get_db), form_data: OAuth2PasswordRequestForm = Depends()
 ) -> Any:
     # OAuth2PasswordRequestForm uses 'username' field for the identifier. We treat it as email here.
@@ -54,10 +60,29 @@ def login_access_token(
         raise HTTPException(status_code=400, detail="Inactive user")
         
     access_token_expires = timedelta(minutes=settings.ACCESS_TOKEN_EXPIRE_MINUTES)
+    token = create_access_token(
+        user.id, expires_delta=access_token_expires
+    )
+    
+    # Store session
+    token_signature = token.split('.')[-1]
+    client_ip = request.client.host if request.client else "unknown"
+    user_agent = request.headers.get("user-agent", "unknown")
+    
+    SecurityService.create_session(db, UserSessionCreate(
+        user_id=user.id,
+        token_signature=token_signature,
+        ip_address=client_ip,
+        user_agent=user_agent,
+        expires_at=datetime.now(timezone.utc) + access_token_expires
+    ))
+    
+    # Log audit
+    from app.services.security_service import log_audit
+    log_audit(db, user.id, "LOGIN", "AUTH", None, None, request)
+    
     return {
-        "access_token": create_access_token(
-            user.id, expires_delta=access_token_expires
-        ),
+        "access_token": token,
         "token_type": "bearer",
     }
 

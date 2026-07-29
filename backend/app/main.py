@@ -9,6 +9,7 @@ from app.models.user import User, Profile
 from app.models.investigation import Investigation
 from app.models.notification import Notification, NotificationPreference
 from app.models.workspace import WorkspaceFolder, SavedSearch
+from app.models.security import AuditLog, UserSession
 
 # Create any tables that don't exist yet (safe for existing tables)
 Base.metadata.create_all(bind=engine)
@@ -58,6 +59,13 @@ if not settings.DATABASE_URL.startswith("sqlite"):
 # ── Application setup ────────────────────────────────────────────────── #
 app = FastAPI(title=settings.PROJECT_NAME, version=settings.VERSION)
 
+# ── Middleware ───────────────────────────────────────────────────────── #
+from app.core.middleware import APILoggingMiddleware, SecurityHeadersMiddleware, RateLimitMiddleware
+
+app.add_middleware(SecurityHeadersMiddleware)
+app.add_middleware(RateLimitMiddleware)
+app.add_middleware(APILoggingMiddleware)
+
 app.add_middleware(
     CORSMiddleware,
     allow_origins=["*"],  # For production, restrict this to the frontend URL
@@ -66,7 +74,7 @@ app.add_middleware(
     allow_headers=["*"],
 )
 
-from app.api.v1 import auth, dashboard, investigation, ioc, notifications, workspace
+from app.api.v1 import auth, dashboard, investigation, ioc, notifications, workspace, security
 
 app.include_router(auth.router, prefix="/api/v1/auth", tags=["auth"])
 app.include_router(dashboard.router, prefix="/api/v1/dashboard", tags=["dashboard"])
@@ -74,6 +82,7 @@ app.include_router(investigation.router, prefix="/api/v1/investigation", tags=["
 app.include_router(ioc.router, prefix="/api/v1/iocs", tags=["ioc"])
 app.include_router(notifications.router, prefix="/api/v1/notifications", tags=["notifications"])
 app.include_router(workspace.router, prefix="/api/v1/workspace", tags=["workspace"])
+app.include_router(security.router, prefix="/api/v1/security", tags=["security"])
 
 @app.get("/")
 def read_root():

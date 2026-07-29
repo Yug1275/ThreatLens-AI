@@ -15,7 +15,9 @@ from app.services.ocr_investigator import OCRInvestigatorService
 from app.services.qr_investigator import QRInvestigatorService
 from app.services.email_investigator import EmailInvestigatorService
 from app.services.phone_investigator import PhoneInvestigatorService
+from app.services.security_service import log_audit
 from pydantic import BaseModel
+from fastapi import Request
 
 router = APIRouter()
 
@@ -147,12 +149,14 @@ def submit_email_investigation(
         threat_score=results.get("threat_score", 0),
         result_data=results,
     )
+    log_audit(db, current_user.id, "CREATE_INVESTIGATION", "INVESTIGATION", inv.id, {"type": "EMAIL", "target": target}, request)
     return inv
 
 
 @router.post("/phone", response_model=InvestigationResponse, status_code=status.HTTP_201_CREATED)
 def submit_phone_investigation(
     submission: PhoneSubmission,
+    request: Request = None,
     current_user: User = Depends(get_current_user),
     db: Session = Depends(get_db),
 ):
@@ -172,6 +176,7 @@ def submit_phone_investigation(
         threat_score=results.get("threat_score", 0),
         result_data=results,
     )
+    log_audit(db, current_user.id, "CREATE_INVESTIGATION", "INVESTIGATION", inv.id, {"type": "PHONE", "target": submission.phone_number}, request)
     return inv
 
 
@@ -273,6 +278,7 @@ def get_investigation(
 def update_investigation(
     investigation_id: str,
     update_data: InvestigationUpdate,
+    request: Request = None,
     current_user: User = Depends(get_current_user),
     db: Session = Depends(get_db),
 ):
@@ -281,6 +287,7 @@ def update_investigation(
     )
     if not inv:
         raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail="Investigation not found")
+    log_audit(db, current_user.id, "UPDATE_INVESTIGATION", "INVESTIGATION", investigation_id, update_data.model_dump(exclude_unset=True), request)
     return inv
 
 
@@ -289,36 +296,44 @@ def update_investigation(
 @router.delete("/{investigation_id}", status_code=status.HTTP_204_NO_CONTENT)
 def delete_investigation(
     investigation_id: str,
+    request: Request = None,
     current_user: User = Depends(get_current_user),
     db: Session = Depends(get_db),
 ):
     deleted = investigation_repository.soft_delete(db, investigation_id, current_user.id)
     if not deleted:
         raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail="Investigation not found")
+    log_audit(db, current_user.id, "DELETE_INVESTIGATION", "INVESTIGATION", investigation_id, {}, request)
 
 
 # ── POST — Bulk action ───────────────────────────────────────────────── #
 
 @router.post("/bulk-action", status_code=status.HTTP_200_OK)
 def bulk_action_investigations(
-    request: BulkActionRequest,
+    request_data: BulkActionRequest,
+    request: Request,
     current_user: User = Depends(get_current_user),
     db: Session = Depends(get_db),
 ):
-    if request.action == "delete":
-        count = investigation_repository.bulk_soft_delete(db, request.ids, current_user.id)
+    if request_data.action == "delete":
+        count = investigation_repository.bulk_soft_delete(db, request_data.ids, current_user.id)
+        log_audit(db, current_user.id, "BULK_DELETE", "INVESTIGATION", None, {"ids": request_data.ids}, request)
         return {"status": "success", "deleted_count": count}
-    elif request.action == "update_folder":
-        count = investigation_repository.bulk_update(db, request.ids, current_user.id, {"folder_id": request.folder_id})
+    elif request_data.action == "update_folder":
+        count = investigation_repository.bulk_update(db, request_data.ids, current_user.id, {"folder_id": request_data.folder_id})
+        log_audit(db, current_user.id, "BULK_UPDATE_FOLDER", "INVESTIGATION", None, {"ids": request_data.ids, "folder_id": request_data.folder_id}, request)
         return {"status": "success", "updated_count": count}
-    elif request.action == "update_status":
-        count = investigation_repository.bulk_update(db, request.ids, current_user.id, {"workflow_status": request.workflow_status})
+    elif request_data.action == "update_status":
+        count = investigation_repository.bulk_update(db, request_data.ids, current_user.id, {"workflow_status": request_data.workflow_status})
+        log_audit(db, current_user.id, "BULK_UPDATE_STATUS", "INVESTIGATION", None, {"ids": request_data.ids, "status": request_data.workflow_status}, request)
         return {"status": "success", "updated_count": count}
-    elif request.action == "archive":
-        count = investigation_repository.bulk_update(db, request.ids, current_user.id, {"is_archived": True})
+    elif request_data.action == "archive":
+        count = investigation_repository.bulk_update(db, request_data.ids, current_user.id, {"is_archived": True})
+        log_audit(db, current_user.id, "BULK_ARCHIVE", "INVESTIGATION", None, {"ids": request_data.ids}, request)
         return {"status": "success", "updated_count": count}
-    elif request.action == "unarchive":
-        count = investigation_repository.bulk_update(db, request.ids, current_user.id, {"is_archived": False})
+    elif request_data.action == "unarchive":
+        count = investigation_repository.bulk_update(db, request_data.ids, current_user.id, {"is_archived": False})
+        log_audit(db, current_user.id, "BULK_UNARCHIVE", "INVESTIGATION", None, {"ids": request_data.ids}, request)
         return {"status": "success", "updated_count": count}
     else:
-        raise HTTPException(status_code=400, detail=f"Unknown action {request.action}")
+        raise HTTPException(status_code=400, detail=f"Unknown action {request_data.action}")
