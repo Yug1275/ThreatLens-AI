@@ -7,6 +7,7 @@ from app.core.config import settings
 # Import all models so Base.metadata.create_all picks them up
 from app.models.user import User, Profile
 from app.models.investigation import Investigation
+from app.models.notification import Notification, NotificationPreference
 
 # Create any tables that don't exist yet (safe for existing tables)
 Base.metadata.create_all(bind=engine)
@@ -49,12 +50,13 @@ app.add_middleware(
     allow_headers=["*"],
 )
 
-from app.api.v1 import auth, dashboard, investigation, ioc
+from app.api.v1 import auth, dashboard, investigation, ioc, notifications
 
 app.include_router(auth.router, prefix="/api/v1/auth", tags=["auth"])
 app.include_router(dashboard.router, prefix="/api/v1/dashboard", tags=["dashboard"])
 app.include_router(investigation.router, prefix="/api/v1/investigation", tags=["investigation"])
 app.include_router(ioc.router, prefix="/api/v1/iocs", tags=["ioc"])
+app.include_router(notifications.router, prefix="/api/v1/notifications", tags=["notifications"])
 
 @app.get("/")
 def read_root():

@@ -2,6 +2,7 @@ import { BrowserRouter, Routes, Route, Link } from 'react-router-dom';
 import MainLayout from './layouts/MainLayout';
 import DashboardLayout from './layouts/DashboardLayout';
 import { AuthProvider } from './context/AuthContext';
+import { NotificationProvider } from './context/NotificationContext';
 import ProtectedRoute from './components/ProtectedRoute';
 import { motion } from 'framer-motion';
 import { Shield, ArrowRight, Zap, Lock, Globe, Search, BarChart3, Brain } from 'lucide-react';
@@ -23,6 +24,7 @@ import Reports from './pages/Reports';
 
 import IocRepository from './pages/IocRepository';
 import IocDetail from './pages/IocDetail';
+import SettingsPage from './pages/SettingsPage';
 
 /* ——————————————— Premium Landing Page ——————————————— */
 const Home = () => (
@@ -112,7 +114,6 @@ const PlaceholderPage = ({ title, description }) => (
 );
 
 const Investigations = () => <PlaceholderPage title="Investigations" description="Investigate URLs, files, IPs, and more." />;
-const SettingsPage = () => <PlaceholderPage title="Settings" description="Manage your account preferences." />;
 const NotFound = () => (
   <div className="tl-hero" style={{ minHeight: '80vh' }}>
     <h1 style={{ fontSize: '6rem', fontWeight: 800, color: 'var(--tl-text-faint)' }}>404</h1>
@@ -126,35 +127,37 @@ function App() {
   return (
     <BrowserRouter>
       <AuthProvider>
-        <Routes>
-          {/* Public Routes */}
-          <Route path="/" element={<MainLayout />}>
-            <Route index element={<Home />} />
-            <Route path="login" element={<Login />} />
-            <Route path="register" element={<Register />} />
-            <Route path="forgot-password" element={<ForgotPassword />} />
-            <Route path="reset-password" element={<ResetPassword />} />
-            <Route path="*" element={<NotFound />} />
-          </Route>
+        <NotificationProvider>
+          <Routes>
+            {/* Public Routes */}
+            <Route path="/" element={<MainLayout />}>
+              <Route index element={<Home />} />
+              <Route path="login" element={<Login />} />
+              <Route path="register" element={<Register />} />
+              <Route path="forgot-password" element={<ForgotPassword />} />
+              <Route path="reset-password" element={<ResetPassword />} />
+              <Route path="*" element={<NotFound />} />
+            </Route>
 
-          {/* Protected Dashboard Routes */}
-          <Route element={<ProtectedRoute><DashboardLayout /></ProtectedRoute>}>
-            <Route path="dashboard" element={<Dashboard />} />
-            <Route path="profile" element={<Profile />} />
-            <Route path="investigations" element={<Investigations />} />
-            <Route path="investigations/url" element={<UrlInvestigation />} />
-            <Route path="investigations/ocr" element={<OcrInvestigation />} />
-            <Route path="investigations/qr" element={<QrInvestigation />} />
-            <Route path="investigations/email" element={<EmailInvestigation />} />
-            <Route path="investigations/phone" element={<PhoneInvestigation />} />
-            <Route path="investigations/detail/:id" element={<InvestigationDetail />} />
-            <Route path="history" element={<InvestigationHistory />} />
-            <Route path="reports" element={<Reports />} />
-            <Route path="iocs" element={<IocRepository />} />
-            <Route path="iocs/:target" element={<IocDetail />} />
-            <Route path="settings" element={<SettingsPage />} />
-          </Route>
-        </Routes>
+            {/* Protected Dashboard Routes */}
+            <Route element={<ProtectedRoute><DashboardLayout /></ProtectedRoute>}>
+              <Route path="dashboard" element={<Dashboard />} />
+              <Route path="profile" element={<Profile />} />
+              <Route path="investigations" element={<Investigations />} />
+              <Route path="investigations/url" element={<UrlInvestigation />} />
+              <Route path="investigations/ocr" element={<OcrInvestigation />} />
+              <Route path="investigations/qr" element={<QrInvestigation />} />
+              <Route path="investigations/email" element={<EmailInvestigation />} />
+              <Route path="investigations/phone" element={<PhoneInvestigation />} />
+              <Route path="investigations/detail/:id" element={<InvestigationDetail />} />
+              <Route path="history" element={<InvestigationHistory />} />
+              <Route path="reports" element={<Reports />} />
+              <Route path="iocs" element={<IocRepository />} />
+              <Route path="iocs/:target" element={<IocDetail />} />
+              <Route path="settings" element={<SettingsPage />} />
+            </Route>
+          </Routes>
+        </NotificationProvider>
       </AuthProvider>
     </BrowserRouter>
   );

@@ -4,8 +4,9 @@ import { AuthContext } from '../context/AuthContext';
 import { motion, AnimatePresence } from 'framer-motion';
 import { 
   LayoutDashboard, Search, Shield, FileText, History, Settings, LogOut,
-  Menu, Bell, ChevronRight, X, Crosshair, User as UserIcon, QrCode, Mail, PhoneCall, Database
+  Menu, ChevronRight, X, Crosshair, User as UserIcon, QrCode, Mail, PhoneCall, Database
 } from 'lucide-react';
+import NotificationCenter from '../components/NotificationCenter';
 
 export default function DashboardLayout() {
   const [sidebarOpen, setSidebarOpen] = useState(true);
@@ -178,10 +179,7 @@ export default function DashboardLayout() {
               <span className="search-shortcut">⌘K</span>
             </div>
 
-            <button className="tl-navbar-icon-btn">
-              <Bell size={18} />
-              <span className="tl-notification-dot" />
-            </button>
+            <NotificationCenter />
 
             <div style={{ width: 1, height: 24, background: 'var(--tl-border)', margin: '0 0.25rem' }} />
 

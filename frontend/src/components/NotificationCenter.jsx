@@ -1,0 +1,132 @@
+import React, { useContext, useState, useRef, useEffect } from 'react';
+import { motion, AnimatePresence } from 'framer-motion';
+import { Bell, Check, Settings, X, Info, AlertTriangle, CheckCircle, XCircle } from 'lucide-react';
+import { NotificationContext } from '../context/NotificationContext';
+import { Link } from 'react-router-dom';
+
+export default function NotificationCenter() {
+    const { notifications, unreadCount, markAsRead, markAllAsRead } = useContext(NotificationContext);
+    const [isOpen, setIsOpen] = useState(false);
+    const dropdownRef = useRef(null);
+
+    useEffect(() => {
+        const handleClickOutside = (event) => {
+            if (dropdownRef.current && !dropdownRef.current.contains(event.target)) {
+                setIsOpen(false);
+            }
+        };
+        document.addEventListener('mousedown', handleClickOutside);
+        return () => document.removeEventListener('mousedown', handleClickOutside);
+    }, []);
+
+    const toggleDropdown = () => setIsOpen(!isOpen);
+
+    const getIcon = (type) => {
+        switch (type) {
+            case 'success': return <CheckCircle className="text-success" size={16} />;
+            case 'warning': return <AlertTriangle className="text-warning" size={16} />;
+            case 'error': return <XCircle className="text-danger" size={16} />;
+            default: return <Info className="text-info" size={16} />;
+        }
+    };
+
+    const formatTime = (isoString) => {
+        const date = new Date(isoString);
+        return date.toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' }) + ', ' + date.toLocaleDateString();
+    };
+
+    return (
+        <div className="position-relative" ref={dropdownRef}>
+            <button className="tl-navbar-icon-btn" onClick={toggleDropdown}>
+                <Bell size={18} />
+                {unreadCount > 0 && <span className="tl-notification-dot" style={{ position: 'absolute', top: 4, right: 6, background: 'var(--tl-danger)', width: 8, height: 8, borderRadius: '50%' }} />}
+            </button>
+
+            <AnimatePresence>
+                {isOpen && (
+                    <motion.div
+                        initial={{ opacity: 0, y: 10, scale: 0.95 }}
+                        animate={{ opacity: 1, y: 0, scale: 1 }}
+                        exit={{ opacity: 0, y: 10, scale: 0.95 }}
+                        transition={{ duration: 0.15 }}
+                        className="tl-dropdown-menu shadow-lg"
+                        style={{
+                            position: 'absolute',
+                            right: 0,
+                            top: '100%',
+                            marginTop: '0.5rem',
+                            width: '350px',
+                            background: 'var(--tl-bg-elevated)',
+                            border: '1px solid var(--tl-border)',
+                            borderRadius: 'var(--tl-radius-md)',
+                            zIndex: 1000,
+                            overflow: 'hidden'
+                        }}
+                    >
+                        <div className="d-flex align-items-center justify-content-between p-3" style={{ borderBottom: '1px solid var(--tl-border)' }}>
+                            <h6 className="m-0" style={{ fontWeight: 600, color: 'var(--tl-text-primary)' }}>Notifications</h6>
+                            <div className="d-flex gap-2">
+                                {unreadCount > 0 && (
+                                    <button
+                                        onClick={() => markAllAsRead()}
+                                        className="btn btn-sm btn-link text-decoration-none p-0"
+                                        style={{ fontSize: '0.8rem', color: 'var(--tl-primary)' }}
+                                    >
+                                        Mark all as read
+                                    </button>
+                                )}
+                                <Link to="/settings" onClick={() => setIsOpen(false)} style={{ color: 'var(--tl-text-muted)' }}>
+                                    <Settings size={16} />
+                                </Link>
+                            </div>
+                        </div>
+
+                        <div className="tl-notification-list" style={{ maxHeight: '350px', overflowY: 'auto' }}>
+                            {notifications.length === 0 ? (
+                                <div className="p-4 text-center text-muted" style={{ fontSize: '0.9rem' }}>
+                                    No notifications
+                                </div>
+                            ) : (
+                                notifications.map(notif => (
+                                    <div
+                                        key={notif.id}
+                                        className={`d-flex p-3 gap-3 position-relative ${!notif.is_read ? 'bg-light-opacity' : ''}`}
+                                        style={{ borderBottom: '1px solid var(--tl-border)', background: !notif.is_read ? 'rgba(var(--tl-primary-rgb), 0.05)' : 'transparent' }}
+                                    >
+                                        <div className="flex-shrink-0 mt-1">
+                                            {getIcon(notif.type)}
+                                        </div>
+                                        <div className="flex-grow-1">
+                                            <div className="d-flex justify-content-between align-items-start mb-1">
+                                                <div style={{ fontWeight: !notif.is_read ? 600 : 500, fontSize: '0.9rem', color: 'var(--tl-text-primary)' }}>
+                                                    {notif.title}
+                                                </div>
+                                                <span style={{ fontSize: '0.75rem', color: 'var(--tl-text-faint)' }}>
+                                                    {formatTime(notif.created_at)}
+                                                </span>
+                                            </div>
+                                            <div style={{ fontSize: '0.85rem', color: 'var(--tl-text-muted)' }}>
+                                                {notif.message}
+                                            </div>
+                                        </div>
+                                        {!notif.is_read && (
+                                            <button
+                                                onClick={() => markAsRead(notif.id)}
+                                                title="Mark as read"
+                                                style={{ background: 'none', border: 'none', color: 'var(--tl-primary)', position: 'absolute', right: '0.5rem', top: '50%', transform: 'translateY(-50%)', opacity: 0.6 }}
+                                                onMouseEnter={(e) => e.currentTarget.style.opacity = 1}
+                                                onMouseLeave={(e) => e.currentTarget.style.opacity = 0.6}
+                                            >
+                                                <Check size={16} />
+                                            </button>
+                                        )}
+                                    </div>
+                                ))
+                            )}
+                        </div>
+                    </motion.div>
+                )}
+            </AnimatePresence>
+        </div>
+    );
+}
