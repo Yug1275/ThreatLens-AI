@@ -287,10 +287,10 @@ export default function Dashboard() {
                   </div>
                 ) : (
                   <ResponsiveContainer width="100%" height="100%">
-                    <BarChart data={productivityData} margin={{ top: 5, right: 5, left: -20, bottom: 0 }}>
+                    <BarChart data={productivityData && productivityData.length > 0 ? productivityData : Array.from({length: 30}).map((_, i) => ({ date: i, count: 0 }))} margin={{ top: 5, right: 5, left: -20, bottom: 0 }}>
                       <CartesianGrid strokeDasharray="3 3" stroke="rgba(148,163,184,0.08)" vertical={false} />
                       <XAxis dataKey="date" stroke="var(--tl-text-faint)" axisLine={false} tickLine={false} dy={10} fontSize={10} interval="preserveStartEnd" minTickGap={20} />
-                      <YAxis stroke="var(--tl-text-faint)" axisLine={false} tickLine={false} fontSize={12} allowDecimals={false} />
+                      <YAxis stroke="var(--tl-text-faint)" axisLine={false} tickLine={false} fontSize={12} allowDecimals={false} domain={[0, dataMax => (dataMax === 0 ? 5 : dataMax)]} />
                       <RechartsTooltip content={<CustomTooltip />} cursor={{ fill: 'rgba(255,255,255,0.05)' }} />
                       <Bar dataKey="count" name="Investigations" fill="var(--tl-primary-light)" radius={[4, 4, 0, 0]} />
                     </BarChart>
