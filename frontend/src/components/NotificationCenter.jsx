@@ -59,7 +59,7 @@ export default function NotificationCenter() {
                             right: 0,
                             top: '100%',
                             marginTop: '0.75rem',
-                            width: '350px',
+                            width: '420px',
                             background: 'var(--tl-bg-elevated)',
                             border: '1px solid var(--tl-border)',
                             borderRadius: 'var(--tl-radius-md)',
@@ -69,21 +69,21 @@ export default function NotificationCenter() {
                         }}
                     >
                         <div className="d-flex align-items-center justify-content-between p-3" style={{ borderBottom: '1px solid var(--tl-border)', background: 'rgba(255,255,255,0.02)' }}>
-                            <h6 className="m-0" style={{ fontWeight: 600, color: 'var(--tl-text-primary)', display: 'flex', alignItems: 'center', gap: '0.5rem' }}>
-                                <Bell size={16} className="text-primary" /> Notifications
-                            </h6>
-                            <div className="d-flex gap-2">
+                            <h5 className="m-0" style={{ fontWeight: 600, color: 'var(--tl-text-primary)', display: 'flex', alignItems: 'center', gap: '0.5rem', fontSize: '1.1rem' }}>
+                                <Bell size={18} className="text-primary" /> Notifications
+                            </h5>
+                            <div className="d-flex align-items-center gap-3">
                                 {unreadCount > 0 && (
                                     <button
                                         onClick={() => markAllAsRead()}
                                         className="btn btn-sm btn-link text-decoration-none p-0"
-                                        style={{ fontSize: '0.8rem', color: 'var(--tl-primary)' }}
+                                        style={{ fontSize: '0.85rem', color: 'var(--tl-primary)' }}
                                     >
                                         Mark all as read
                                     </button>
                                 )}
-                                <Link to="/settings" onClick={() => setIsOpen(false)} style={{ color: 'var(--tl-text-faint)' }} className="tl-navbar-icon-btn" style={{width: 28, height: 28}}>
-                                    <Settings size={16} />
+                                <Link to="/settings" onClick={() => setIsOpen(false)} style={{ color: 'var(--tl-text-faint)', display: 'flex' }}>
+                                    <Settings size={18} />
                                 </Link>
                             </div>
                         </div>
@@ -101,36 +101,36 @@ export default function NotificationCenter() {
                                 notifications.map(notif => (
                                     <div
                                         key={notif.id}
-                                        className={`d-flex p-3 gap-3 position-relative ${!notif.is_read ? 'bg-light-opacity' : ''}`}
+                                        className={`d-flex p-3 gap-3 ${!notif.is_read ? 'bg-light-opacity' : ''}`}
                                         style={{ borderBottom: '1px solid var(--tl-border)', background: !notif.is_read ? 'rgba(var(--tl-primary-rgb), 0.05)' : 'transparent' }}
                                     >
                                         <div className="flex-shrink-0 mt-1">
                                             {getIcon(notif.type)}
                                         </div>
                                         <div className="flex-grow-1">
-                                            <div className="d-flex justify-content-between align-items-start mb-1">
-                                                <div style={{ fontWeight: !notif.is_read ? 600 : 500, fontSize: '0.9rem', color: 'var(--tl-text-primary)' }}>
+                                            <div className="d-flex justify-content-between align-items-start mb-2">
+                                                <div style={{ fontWeight: !notif.is_read ? 600 : 500, fontSize: '1rem', color: 'var(--tl-text-primary)' }}>
                                                     {notif.title}
                                                 </div>
                                                 <span style={{ fontSize: '0.75rem', color: 'var(--tl-text-faint)' }}>
                                                     {formatTime(notif.created_at)}
                                                 </span>
                                             </div>
-                                            <div style={{ fontSize: '0.85rem', color: 'var(--tl-text-muted)' }}>
-                                                {notif.message}
+                                            <div className="d-flex justify-content-between align-items-end gap-2">
+                                                <div style={{ fontSize: '0.9rem', color: 'var(--tl-text-muted)' }}>
+                                                    {notif.message}
+                                                </div>
+                                                {!notif.is_read && (
+                                                    <button
+                                                        onClick={() => markAsRead(notif.id)}
+                                                        title="Mark as read"
+                                                        style={{ background: 'none', border: 'none', color: 'var(--tl-primary)', padding: 0 }}
+                                                    >
+                                                        <Check size={18} />
+                                                    </button>
+                                                )}
                                             </div>
                                         </div>
-                                        {!notif.is_read && (
-                                            <button
-                                                onClick={() => markAsRead(notif.id)}
-                                                title="Mark as read"
-                                                style={{ background: 'none', border: 'none', color: 'var(--tl-primary)', position: 'absolute', right: '0.5rem', top: '50%', transform: 'translateY(-50%)', opacity: 0.6 }}
-                                                onMouseEnter={(e) => e.currentTarget.style.opacity = 1}
-                                                onMouseLeave={(e) => e.currentTarget.style.opacity = 0.6}
-                                            >
-                                                <Check size={16} />
-                                            </button>
-                                        )}
                                     </div>
                                 ))
                             )}
