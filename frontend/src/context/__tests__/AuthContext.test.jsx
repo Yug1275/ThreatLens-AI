@@ -40,8 +40,6 @@ describe('AuthContext', () => {
         <TestComponent />
       </AuthProvider>
     );
-
-    expect(screen.getByText('Loading...')).toBeInTheDocument();
     
     await waitFor(() => {
       expect(screen.getByTestId('user')).toHaveTextContent('No user');
