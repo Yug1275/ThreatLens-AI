@@ -14,3 +14,7 @@ easyocr
 phonenumbers
 python-whois
 python-dateutil
+pytest
+pytest-asyncio
+pytest-cov
+pytest-mock

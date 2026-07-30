@@ -3,7 +3,7 @@ from fastapi import Depends, HTTPException, status
 from fastapi.security import OAuth2PasswordBearer
 from jose import jwt, JWTError
 from sqlalchemy.orm import Session
-from app.core.database import SessionLocal
+from app.core.database import SessionLocal, get_db
 from app.core.config import settings
 from app.schemas.token import TokenPayload
 from app.models.user import User
@@ -12,13 +12,6 @@ from app.repositories.user_repository import user_repository
 reusable_oauth2 = OAuth2PasswordBearer(
     tokenUrl="/api/v1/auth/login"
 )
-
-def get_db() -> Generator:
-    try:
-        db = SessionLocal()
-        yield db
-    finally:
-        db.close()
 
 def get_current_user(
     db: Session = Depends(get_db), token: str = Depends(reusable_oauth2)
