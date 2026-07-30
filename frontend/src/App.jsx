@@ -22,6 +22,7 @@ const PhoneInvestigation = React.lazy(() => import('./pages/PhoneInvestigation')
 const InvestigationHistory = React.lazy(() => import('./pages/InvestigationHistory'));
 const InvestigationDetail = React.lazy(() => import('./pages/InvestigationDetail'));
 const Reports = React.lazy(() => import('./pages/Reports'));
+const MonitoringDashboard = React.lazy(() => import('./pages/MonitoringDashboard'));
 
 const IocRepository = React.lazy(() => import('./pages/IocRepository'));
 const IocDetail = React.lazy(() => import('./pages/IocDetail'));
@@ -157,6 +158,7 @@ function App() {
                 <Route path="iocs" element={<IocRepository />} />
                 <Route path="iocs/:target" element={<IocDetail />} />
                 <Route path="settings" element={<SettingsPage />} />
+                <Route path="monitoring" element={<MonitoringDashboard />} />
               </Route>
             </Routes>
           </Suspense>

@@ -38,18 +38,30 @@ class SecurityHeadersMiddleware(BaseHTTPMiddleware):
         return response
 
 
+from app.services.monitoring_service import monitoring_service
+import traceback
+
 class APILoggingMiddleware(BaseHTTPMiddleware):
     async def dispatch(self, request: Request, call_next):
         start_time = time.time()
         
-        response = await call_next(request)
-        
-        process_time = time.time() - start_time
-        client_ip = request.client.host if request.client else "unknown"
-        
-        # In a real app, use the python logging module. Printing for MVP.
-        print(f"[API] {request.method} {request.url.path} - {response.status_code} - {client_ip} - {process_time:.4f}s")
-        
-        # We can also add a response header for execution time if desired
-        response.headers["X-Process-Time"] = str(process_time)
-        return response
+        try:
+            response = await call_next(request)
+            process_time = time.time() - start_time
+            client_ip = request.client.host if request.client else "unknown"
+            
+            # Record metrics
+            monitoring_service.record_request(process_time * 1000, response.status_code)
+            
+            # In a real app, use the python logging module. Printing for MVP.
+            print(f"[API] {request.method} {request.url.path} - {response.status_code} - {client_ip} - {process_time:.4f}s")
+            
+            # We can also add a response header for execution time if desired
+            response.headers["X-Process-Time"] = str(process_time)
+            return response
+            
+        except Exception as e:
+            process_time = time.time() - start_time
+            monitoring_service.record_request(process_time * 1000, 500)
+            monitoring_service.record_exception(request.url.path, request.method, str(e))
+            raise e

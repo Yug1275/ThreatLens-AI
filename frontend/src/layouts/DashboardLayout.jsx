@@ -4,7 +4,7 @@ import { AuthContext } from '../context/AuthContext';
 import { motion, AnimatePresence } from 'framer-motion';
 import { 
   LayoutDashboard, Search, Shield, FileText, History, Settings, LogOut,
-  Menu, ChevronRight, X, Crosshair, User as UserIcon, QrCode, Mail, PhoneCall, Database
+  Menu, ChevronRight, X, Crosshair, User as UserIcon, QrCode, Mail, PhoneCall, Database, Activity
 } from 'lucide-react';
 import NotificationCenter from '../components/NotificationCenter';
 
@@ -46,6 +46,7 @@ export default function DashboardLayout() {
   const secondaryNav = [
     { name: 'Threat Intel', path: '/reports', icon: Shield },
     { name: 'IOCs', path: '/iocs', icon: Database },
+    { name: 'System Status', path: '/monitoring', icon: Activity },
     { name: 'Settings', path: '/settings', icon: Settings },
   ];
 
