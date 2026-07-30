@@ -59,6 +59,17 @@ function scoreToStatus(score) {
 const RISK_COLORS = { Malicious: '#EF4444', Suspicious: '#F59E0B', Safe: '#10B981' };
 const TYPE_COLORS = { URL: '#3B82F6', EMAIL: '#10B981', PHONE: '#8B5CF6', OCR: '#06B6D4', QR: '#F59E0B' };
 
+const statusBadge = (status) => {
+  const map = { MALICIOUS: 'danger', SAFE: 'success', PENDING: 'warning', SUSPICIOUS: 'warning' };
+  return <span className={`tl-badge tl-badge-${map[status] || 'primary'}`}>{status}</span>;
+};
+
+const fadeUp = (delay = 0) => ({
+  initial: { opacity: 0, y: 16 },
+  animate: { opacity: 1, y: 0 },
+  transition: { duration: 0.4, delay, ease: 'easeOut' }
+});
+
 export default function Dashboard() {
   const { user } = useContext(AuthContext);
   const navigate = useNavigate();
@@ -103,24 +114,13 @@ export default function Dashboard() {
     fetchData();
   }, []);
 
-  const statCards = [
+  const statCards = React.useMemo(() => [
     { title: 'Total Investigations', value: stats?.total ?? 0, icon: Search, trend: 'All time', up: true, color: '--tl-primary-rgb' },
     { title: 'Malicious Threats', value: stats?.malicious ?? 0, icon: ShieldAlert, trend: 'Score > 75', up: false, color: '--tl-danger-rgb' },
     { title: 'Safe Entities', value: stats?.safe ?? 0, icon: Activity, trend: 'Score ≤ 40', up: true, color: '--tl-success-rgb' },
     { title: 'Suspicious', value: stats?.suspicious ?? 0, icon: AlertTriangle, trend: 'Score 41–75', up: true, color: '--tl-warning-rgb' },
     { title: 'Average Score', value: stats?.average_score?.toFixed(1) ?? '0.0', icon: TrendingUp, trend: 'Overall', up: true, color: '--tl-info-rgb' },
-  ];
-
-  const statusBadge = (status) => {
-    const map = { MALICIOUS: 'danger', SAFE: 'success', PENDING: 'warning', SUSPICIOUS: 'warning' };
-    return <span className={`tl-badge tl-badge-${map[status] || 'primary'}`}>{status}</span>;
-  };
-
-  const fadeUp = (delay = 0) => ({
-    initial: { opacity: 0, y: 16 },
-    animate: { opacity: 1, y: 0 },
-    transition: { duration: 0.4, delay, ease: 'easeOut' }
-  });
+  ], [stats]);
 
   return (
     <div>
