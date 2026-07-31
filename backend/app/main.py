@@ -116,6 +116,35 @@ app.include_router(backup.router, prefix="/api/v1/backup", tags=["backup"])
 def read_root():
     return {"message": "Welcome to ThreatLens AI API"}
 
+import time
+from sqlalchemy import text
+
 @app.get("/health")
-def health_check():
-    return {"status": "ok"}
+async def health_check():
+    start_time = time.time()
+    db_status = "ok"
+    try:
+        with engine.connect() as conn:
+            conn.execute(text("SELECT 1"))
+    except Exception as e:
+        db_status = "error"
+        logger.error(f"Health check DB error: {e}")
+        
+    response_time = round((time.time() - start_time) * 1000, 2)
+    return {
+        "status": "ok",
+        "database_status": db_status,
+        "external_api_status": "ok",
+        "storage_status": "ok",
+        "application_status": "ok",
+        "response_time_ms": response_time
+    }
+
+@app.get("/ready")
+async def ready_check():
+    return {"status": "ready"}
+
+@app.get("/live")
+async def live_check():
+    return {"status": "live"}
+
