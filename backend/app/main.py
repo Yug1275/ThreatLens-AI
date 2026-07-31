@@ -57,7 +57,33 @@ if not settings.DATABASE_URL.startswith("sqlite"):
         print(f"[migration] Warning: {e}")
 
 # ── Application setup ────────────────────────────────────────────────── #
-app = FastAPI(title=settings.PROJECT_NAME, version=settings.VERSION)
+from contextlib import asynccontextmanager
+from apscheduler.schedulers.background import BackgroundScheduler
+from app.services.backup_service import backup_service
+import logging
+
+logger = logging.getLogger(__name__)
+scheduler = BackgroundScheduler()
+
+@asynccontextmanager
+async def lifespan(app: FastAPI):
+    # Schedule automated backups
+    try:
+        scheduler.add_job(
+            backup_service.create_backup,
+            'cron',
+            hour=settings.BACKUP_CRON_HOUR,
+            minute=settings.BACKUP_CRON_MINUTE,
+            kwargs={'is_automated': True}
+        )
+        scheduler.start()
+        logger.info("Backup scheduler started.")
+    except Exception as e:
+        logger.error(f"Failed to start backup scheduler: {e}")
+    yield
+    scheduler.shutdown()
+
+app = FastAPI(title=settings.PROJECT_NAME, version=settings.VERSION, lifespan=lifespan)
 
 # ── Middleware ───────────────────────────────────────────────────────── #
 from app.core.middleware import APILoggingMiddleware, SecurityHeadersMiddleware, RateLimitMiddleware
@@ -74,7 +100,7 @@ app.add_middleware(
     allow_headers=["*"],
 )
 
-from app.api.v1 import auth, dashboard, investigation, ioc, notifications, workspace, security, monitoring
+from app.api.v1 import auth, dashboard, investigation, ioc, notifications, workspace, security, monitoring, backup
 
 app.include_router(auth.router, prefix="/api/v1/auth", tags=["auth"])
 app.include_router(dashboard.router, prefix="/api/v1/dashboard", tags=["dashboard"])
@@ -84,6 +110,7 @@ app.include_router(notifications.router, prefix="/api/v1/notifications", tags=["
 app.include_router(workspace.router, prefix="/api/v1/workspace", tags=["workspace"])
 app.include_router(security.router, prefix="/api/v1/security", tags=["security"])
 app.include_router(monitoring.router, prefix="/api/v1/monitoring", tags=["monitoring"])
+app.include_router(backup.router, prefix="/api/v1/backup", tags=["backup"])
 
 @app.get("/")
 def read_root():

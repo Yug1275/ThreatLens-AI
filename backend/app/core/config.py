@@ -15,6 +15,11 @@ class Settings(BaseSettings):
     TAVILY_API_KEY: str | None = None
     OCR_LANGUAGE: str | None = "eng"
     
+    # Backup Configuration
+    BACKUP_DIR: str = os.getenv("BACKUP_DIR", "./backups")
+    BACKUP_CRON_HOUR: int = int(os.getenv("BACKUP_CRON_HOUR", "0"))
+    BACKUP_CRON_MINUTE: int = int(os.getenv("BACKUP_CRON_MINUTE", "0"))
+    
     class Config:
         env_file = ".env"
         case_sensitive = True
