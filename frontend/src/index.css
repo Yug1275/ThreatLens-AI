@@ -854,6 +854,32 @@ a:hover { color: var(--tl-primary); }
   margin-left: var(--tl-sidebar-collapsed);
 }
 
+.tl-modal-backdrop {
+  position: fixed;
+  top: 0;
+  right: 0;
+  bottom: 0;
+  left: var(--tl-sidebar-width);
+  z-index: 9999;
+  background: rgba(0,0,0,0.6);
+  backdrop-filter: blur(4px);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  padding: 2rem;
+  transition: left var(--tl-transition-base);
+}
+.tl-main-content.collapsed .tl-modal-backdrop {
+  left: var(--tl-sidebar-collapsed);
+}
+
+/* On mobile, sidebar is hidden or overlaps, so modal should take full width */
+@media (max-width: 991.98px) {
+  .tl-modal-backdrop, .tl-main-content.collapsed .tl-modal-backdrop {
+    left: 0;
+  }
+}
+
 .tl-page-content {
   padding: 2rem;
 }
@@ -1026,3 +1052,12 @@ a:hover { color: var(--tl-primary); }
   }
 }
 
+/* ----------------------------------------------------------------
+   22. ANIMATIONS & UTILITIES
+   ---------------------------------------------------------------- */
+@keyframes tl-spin-animation {
+  to { transform: rotate(360deg); }
+}
+.tl-spin {
+  animation: tl-spin-animation 1s linear infinite;
+}

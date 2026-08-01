@@ -16,8 +16,12 @@ from app.services.qr_investigator import QRInvestigatorService
 from app.services.email_investigator import EmailInvestigatorService
 from app.services.phone_investigator import PhoneInvestigatorService
 from app.services.security_service import log_audit
+from app.services.ai.ai_service import ai_service
 from pydantic import BaseModel
 from fastapi import Request
+import logging
+
+ai_logger = logging.getLogger("ai.investigation")
 
 router = APIRouter()
 
@@ -55,6 +59,15 @@ def submit_url_investigation(
     except Exception as e:
         raise HTTPException(status_code=500, detail=str(e))
 
+    # AI Enrichment (Phase 9) — non-blocking
+    try:
+        ai_analysis = ai_service.enrich_investigation("URL", submission.url, results)
+        if ai_analysis:
+            results["ai_analysis"] = ai_analysis
+    except Exception as e:
+        ai_logger.warning("AI enrichment failed for URL %s: %s", submission.url[:50], e)
+        results["ai_analysis"] = None
+
     inv = investigation_repository.create(
         db,
         user_id=current_user.id,
@@ -81,6 +94,15 @@ async def submit_ocr_investigation(
     except Exception as e:
         raise HTTPException(status_code=500, detail=str(e))
 
+    # AI Enrichment (Phase 9)
+    try:
+        ai_analysis = ai_service.enrich_investigation("OCR", file.filename, results)
+        if ai_analysis:
+            results["ai_analysis"] = ai_analysis
+    except Exception as e:
+        ai_logger.warning("AI enrichment failed for OCR %s: %s", file.filename, e)
+        results["ai_analysis"] = None
+
     inv = investigation_repository.create(
         db,
         user_id=current_user.id,
@@ -106,6 +128,15 @@ async def submit_qr_investigation(
         results = QRInvestigatorService.analyze(file_bytes)
     except Exception as e:
         raise HTTPException(status_code=500, detail=str(e))
+
+    # AI Enrichment (Phase 9)
+    try:
+        ai_analysis = ai_service.enrich_investigation("QR", file.filename, results)
+        if ai_analysis:
+            results["ai_analysis"] = ai_analysis
+    except Exception as e:
+        ai_logger.warning("AI enrichment failed for QR %s: %s", file.filename, e)
+        results["ai_analysis"] = None
 
     inv = investigation_repository.create(
         db,
@@ -141,6 +172,16 @@ def submit_email_investigation(
         raise HTTPException(status_code=500, detail=str(e))
 
     target = "Raw Headers" if submission.raw_headers else f"Structured: {submission.sender_email}"
+
+    # AI Enrichment (Phase 9)
+    try:
+        ai_analysis = ai_service.enrich_investigation("EMAIL", target, results)
+        if ai_analysis:
+            results["ai_analysis"] = ai_analysis
+    except Exception as e:
+        ai_logger.warning("AI enrichment failed for EMAIL %s: %s", target[:50], e)
+        results["ai_analysis"] = None
+
     inv = investigation_repository.create(
         db,
         user_id=current_user.id,
@@ -167,6 +208,15 @@ def submit_phone_investigation(
         results = PhoneInvestigatorService.analyze(submission.phone_number)
     except Exception as e:
         raise HTTPException(status_code=500, detail=str(e))
+
+    # AI Enrichment (Phase 9)
+    try:
+        ai_analysis = ai_service.enrich_investigation("PHONE", submission.phone_number, results)
+        if ai_analysis:
+            results["ai_analysis"] = ai_analysis
+    except Exception as e:
+        ai_logger.warning("AI enrichment failed for PHONE %s: %s", submission.phone_number, e)
+        results["ai_analysis"] = None
 
     inv = investigation_repository.create(
         db,

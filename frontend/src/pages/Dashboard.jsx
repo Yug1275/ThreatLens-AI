@@ -144,11 +144,11 @@ export default function Dashboard() {
       </motion.div>
 
       {/* Stat Cards */}
-      <div className="row g-4 mb-4">
+      <div className="d-flex flex-wrap gap-4 mb-4">
         {statCards.map((s, i) => {
           const Icon = s.icon;
           return (
-            <div key={i} className="col-6 col-md-4 col-xl">
+            <div key={i} style={{ flex: '1 1 200px', minWidth: 0 }}>
               <motion.div {...fadeUp(0.05 * (i + 1))}>
                 {loading ? (
                   <div className="tl-stat-card"><Skeleton h="24px" w="50%" /><div style={{ marginTop: '1rem' }}><Skeleton h="40px" w="60%" /></div></div>

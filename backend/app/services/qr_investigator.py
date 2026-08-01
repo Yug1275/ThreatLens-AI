@@ -227,6 +227,5 @@ class QRInvestigatorService:
             "metadata": metadata,
             "threat_score": threat_score,
             "indicators": matched_rules,
-            "recommendations": recommendations,
-            "summary": "AI Investigation Summary will be available in Phase 9."
+            "recommendations": recommendations
         }

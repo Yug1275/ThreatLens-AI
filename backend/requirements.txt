@@ -20,3 +20,4 @@ pytest-cov
 pytest-mock
 psutil
 apscheduler
+httpx

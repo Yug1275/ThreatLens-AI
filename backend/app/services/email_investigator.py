@@ -258,9 +258,7 @@ class EmailInvestigatorService:
             "auth_results": auth_results,
             "sender_analysis": sender_analysis,
             "indicators": indicators,
-            "iocs": iocs,
-            
-            "summary": "AI Investigation Summary will be available in Phase 9."
+            "iocs": iocs
         }
 
     @staticmethod

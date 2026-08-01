@@ -101,8 +101,7 @@ class PhoneInvestigatorService:
                 "matched_rules": indicators,
                 "recommendations": recommendations,
                 "investigation_timestamp": datetime.now(timezone.utc).isoformat(),
-                "timeline": timeline,
-                "summary": "AI Investigation Summary will be available in Phase 9."
+                "timeline": timeline
             }
             
         except phonenumbers.NumberParseException as e:

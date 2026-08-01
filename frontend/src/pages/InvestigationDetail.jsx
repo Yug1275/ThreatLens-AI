@@ -4,12 +4,13 @@ import { motion, AnimatePresence } from 'framer-motion';
 import {
   ChevronLeft, Globe, Mail, Phone, ScanLine, QrCode,
   ShieldAlert, Activity, Clock, CheckCircle, AlertTriangle, XCircle, X,
-  Database, FileText, Link as LinkIcon, Download, Printer, Star, Edit3, Archive, Tag, MessageSquare
+  Database, FileText, Link as LinkIcon, Download, Printer, Star, Edit3, Archive, Tag, MessageSquare, Brain
 } from 'lucide-react';
 import investigationService from '../services/investigationService';
 import { Badge } from '../components/ui/Badge';
 import { Button } from '../components/ui/Button';
 import UrlReportView from '../components/investigation/UrlReportView';
+import AIInsightsModal from '../components/investigation/AIInsightsModal';
 
 // ── Helpers ───────────────────────────────────────────────────────────── //
 
@@ -223,6 +224,7 @@ export default function InvestigationDetail() {
   const [editNotes, setEditNotes] = useState('');
   const [editTags, setEditTags] = useState('');
   const [saving, setSaving] = useState(false);
+  const [showAIModal, setShowAIModal] = useState(false);
 
   useEffect(() => {
     fetchData();
@@ -384,8 +386,14 @@ export default function InvestigationDetail() {
                 </div>
               </div>
 
-              {/* Edit/Archive Actions */}
+              {/* Edit/Archive/AI Actions */}
               <div className="d-flex gap-2 flex-shrink-0 no-print">
+                <button 
+                  className="tl-btn tl-btn-primary tl-btn-sm" 
+                  onClick={() => setShowAIModal(true)}
+                >
+                  <Brain size={14} /> AI Analysis
+                </button>
                 <button className="tl-btn tl-btn-ghost tl-btn-sm" onClick={() => setShowEdit(true)}>
                   <Edit3 size={14} /> Edit
                 </button>
@@ -410,7 +418,7 @@ export default function InvestigationDetail() {
 
           {/* Report body */}
           {inv.type === 'URL' ? (
-            <div className="mt-4">
+            <div className="mt-4 d-flex flex-column gap-4">
               <UrlReportView result={inv.result_data} />
             </div>
           ) : (
@@ -523,6 +531,14 @@ export default function InvestigationDetail() {
           </div>
         )}
       </AnimatePresence>
+
+      <AIInsightsModal
+        isOpen={showAIModal}
+        onClose={() => setShowAIModal(false)}
+        aiAnalysis={inv?.result_data?.ai_analysis}
+        investigationId={inv?.id}
+        investigationType={inv?.type}
+      />
     </div>
   );
 }

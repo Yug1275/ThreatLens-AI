@@ -100,7 +100,7 @@ app.add_middleware(
     allow_headers=["*"],
 )
 
-from app.api.v1 import auth, dashboard, investigation, ioc, notifications, workspace, security, monitoring, backup
+from app.api.v1 import auth, dashboard, investigation, ioc, notifications, workspace, security, monitoring, backup, ai
 
 app.include_router(auth.router, prefix="/api/v1/auth", tags=["auth"])
 app.include_router(dashboard.router, prefix="/api/v1/dashboard", tags=["dashboard"])
@@ -111,6 +111,7 @@ app.include_router(workspace.router, prefix="/api/v1/workspace", tags=["workspac
 app.include_router(security.router, prefix="/api/v1/security", tags=["security"])
 app.include_router(monitoring.router, prefix="/api/v1/monitoring", tags=["monitoring"])
 app.include_router(backup.router, prefix="/api/v1/backup", tags=["backup"])
+app.include_router(ai.router, prefix="/api/v1/ai", tags=["ai"])
 
 @app.get("/")
 def read_root():

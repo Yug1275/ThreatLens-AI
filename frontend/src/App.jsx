@@ -115,7 +115,6 @@ const PlaceholderPage = ({ title, description }) => (
   </div>
 );
 
-const Investigations = () => <PlaceholderPage title="Investigations" description="Investigate URLs, files, IPs, and more." />;
 const NotFound = () => (
   <div className="tl-hero" style={{ minHeight: '80vh' }}>
     <h1 style={{ fontSize: '6rem', fontWeight: 800, color: 'var(--tl-text-faint)' }}>404</h1>
@@ -146,7 +145,6 @@ function App() {
               <Route element={<ProtectedRoute><DashboardLayout /></ProtectedRoute>}>
                 <Route path="dashboard" element={<Dashboard />} />
                 <Route path="profile" element={<Profile />} />
-                <Route path="investigations" element={<Investigations />} />
                 <Route path="investigations/url" element={<UrlInvestigation />} />
                 <Route path="investigations/ocr" element={<OcrInvestigation />} />
                 <Route path="investigations/qr" element={<QrInvestigation />} />

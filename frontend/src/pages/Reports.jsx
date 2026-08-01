@@ -3,12 +3,13 @@ import { useNavigate } from 'react-router-dom';
 import { motion } from 'framer-motion';
 import {
   FileText, ExternalLink, Filter, Globe, Mail, Phone, ScanLine, QrCode,
-  ShieldAlert, ShieldCheck, AlertTriangle, ChevronLeft, ChevronRight, Clock, TrendingUp, Download
+  ShieldAlert, ShieldCheck, AlertTriangle, ChevronLeft, ChevronRight, Clock, TrendingUp, Download, Brain
 } from 'lucide-react';
 import investigationService from '../services/investigationService';
 import { PageHeader } from '../components/ui/PageHeader';
 import { Badge } from '../components/ui/Badge';
 import { Button } from '../components/ui/Button';
+import ExecutiveReportModal from '../components/investigation/ExecutiveReportModal';
 import api from '../utils/axios';
 
 // ── Helpers ───────────────────────────────────────────────────────────── //
@@ -194,6 +195,7 @@ export default function Reports() {
   const [error, setError]     = useState(null);
   const [page, setPage]       = useState(1);
   const [typeFilter, setType] = useState('');
+  const [showReportModal, setShowReportModal] = useState(false);
 
   const fetchData = useCallback(async () => {
     setLoading(true);
@@ -258,7 +260,14 @@ export default function Reports() {
           ))}
         </motion.div>
         
-        <motion.div initial={{ opacity: 0, x: 10 }} animate={{ opacity: 1, x: 0 }} className="d-flex gap-2">
+        <motion.div initial={{ opacity: 0, x: 10 }} animate={{ opacity: 1, x: 0 }} className="d-flex gap-2 flex-wrap justify-content-end">
+          <button 
+            className="tl-btn tl-btn-primary tl-btn-sm" 
+            onClick={() => setShowReportModal(true)}
+            disabled={items.length === 0}
+          >
+            <Brain size={14} /> Executive Report
+          </button>
           <button 
             className="tl-btn tl-btn-secondary tl-btn-sm" 
             onClick={() => handleExport('csv')}
@@ -341,6 +350,13 @@ export default function Reports() {
           )}
         </>
       )}
+
+      {/* AI Executive Report Modal */}
+      <ExecutiveReportModal
+        isOpen={showReportModal}
+        onClose={() => setShowReportModal(false)}
+        investigationIds={items.map(i => i.id)}
+      />
     </div>
   );
 }

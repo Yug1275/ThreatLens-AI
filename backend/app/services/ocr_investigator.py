@@ -49,13 +49,20 @@ class OCRInvestigatorService:
         # Cap score
         threat_score = min(threat_score, 99)
         
+        # Logic to generate recommendations based on matched rules and IOCs
+        recommendations = []
+        if threat_score > 50:
+            recommendations.append("High threat detected: Do not interact with this content.")
+        if "Credential Request" in matched_rules:
+            recommendations.append("Do not enter credentials on any site linked in this document.")
+            
         return {
             "extracted_text": full_text,
             "confidence_score": round(avg_confidence * 100, 2),
             "threat_score": threat_score,
             "matched_rules": matched_rules,
             "iocs": iocs,
-            "summary": "AI Investigation Summary will be available in Phase 9."
+            "recommendations": recommendations
         }
         
     @staticmethod
