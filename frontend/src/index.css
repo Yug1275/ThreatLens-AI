@@ -115,6 +115,20 @@ body {
   overflow-x: hidden;
 }
 
+/* Bootstrap overrides for dark theme */
+.text-muted {
+  color: var(--tl-text-muted) !important;
+}
+.text-primary {
+  color: var(--tl-primary-light) !important;
+}
+.text-danger {
+  color: var(--tl-danger) !important;
+}
+.text-warning {
+  color: var(--tl-warning) !important;
+}
+
 /* Scrollbar */
 ::-webkit-scrollbar { width: 6px; height: 6px; }
 ::-webkit-scrollbar-track { background: transparent; }
@@ -232,6 +246,7 @@ a:hover { color: var(--tl-primary); }
   box-shadow: var(--tl-shadow-sm);
   transition: all var(--tl-transition-base);
   overflow: hidden;
+  color: var(--tl-text-primary) !important;
 }
 .tl-card:hover {
   border-color: var(--tl-border-strong);
@@ -268,6 +283,7 @@ a:hover { color: var(--tl-primary); }
   border: 1px solid var(--tl-border);
   transition: all var(--tl-transition-base);
   overflow: hidden;
+  color: var(--tl-text-primary) !important;
 }
 .tl-stat-card::before {
   content: '';
@@ -472,7 +488,6 @@ a:hover { color: var(--tl-primary); }
   z-index: 1000;
   display: flex;
   flex-direction: column;
-  transition: width var(--tl-transition-base);
   overflow: hidden;
 }
 
@@ -846,7 +861,6 @@ a:hover { color: var(--tl-primary); }
 .tl-main-content {
   margin-left: var(--tl-sidebar-width);
   min-height: 100vh;
-  transition: margin-left var(--tl-transition-base);
   position: relative;
   z-index: 1;
 }

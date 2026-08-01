@@ -1,4 +1,4 @@
-from pydantic import BaseModel
+from pydantic import BaseModel, ConfigDict
 from typing import Optional, Any, List
 from datetime import datetime
 
@@ -26,8 +26,7 @@ class InvestigationResponse(BaseModel):
     folder_id: Optional[str] = None
     workflow_status: str = "NEW"
 
-    class Config:
-        from_attributes = True
+    model_config = ConfigDict(from_attributes=True)
 
 
 class InvestigationListResponse(BaseModel):
@@ -65,8 +64,7 @@ class RecentInvestigationItem(BaseModel):
     threat_score: Optional[int] = None
     created_at: datetime
 
-    class Config:
-        from_attributes = True
+    model_config = ConfigDict(from_attributes=True)
 
 
 class InvestigationUpdate(BaseModel):

@@ -38,6 +38,14 @@ class UserRepository:
             return None
             
         update_data = obj_in.model_dump(exclude_unset=True)
+        
+        # Handle email update on the User model
+        if 'email' in update_data:
+            user = db.query(User).filter(User.id == user_id).first()
+            if user:
+                user.email = update_data['email']
+            del update_data['email']
+            
         for field, value in update_data.items():
             setattr(profile, field, value)
             

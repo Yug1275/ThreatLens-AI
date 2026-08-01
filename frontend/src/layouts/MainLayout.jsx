@@ -31,14 +31,6 @@ export default function MainLayout() {
           display: 'flex', alignItems: 'center', justifyContent: 'space-between',
         }}>
           <Link to="/" className="d-flex align-items-center gap-2 text-decoration-none">
-            <div style={{
-              width: 32, height: 32, borderRadius: 'var(--tl-radius-sm)',
-              background: 'var(--tl-gradient-primary)',
-              display: 'flex', alignItems: 'center', justifyContent: 'center',
-              boxShadow: '0 2px 8px rgba(var(--tl-primary-rgb), 0.3)',
-            }}>
-              <Shield size={16} color="#fff" />
-            </div>
             <span style={{ fontWeight: 700, fontSize: '1rem', color: 'var(--tl-text-primary)' }}>
               Threat<span className="text-gradient">Lens</span> AI
             </span>

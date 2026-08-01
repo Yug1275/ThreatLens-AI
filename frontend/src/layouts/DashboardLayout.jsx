@@ -4,7 +4,7 @@ import { AuthContext } from '../context/AuthContext';
 import { motion, AnimatePresence } from 'framer-motion';
 import { 
   LayoutDashboard, Search, Shield, FileText, History, Settings, LogOut,
-  Menu, ChevronRight, X, Crosshair, User as UserIcon, QrCode, Mail, PhoneCall, Database, Activity
+  Menu, ChevronRight, X, Crosshair, QrCode, Mail, PhoneCall, Database, Activity
 } from 'lucide-react';
 import NotificationCenter from '../components/NotificationCenter';
 
@@ -71,8 +71,8 @@ export default function DashboardLayout() {
               initial={{ opacity: 0, width: 0 }}
               animate={{ opacity: 1, width: 'auto' }}
               exit={{ opacity: 0, width: 0 }}
-              transition={{ duration: 0.15 }}
-              style={{ overflow: 'hidden' }}
+              transition={{ type: 'spring', stiffness: 300, damping: 30 }}
+              style={{ overflow: 'hidden', whiteSpace: 'nowrap' }}
             >
               {item.name}
             </motion.span>
@@ -95,10 +95,12 @@ export default function DashboardLayout() {
       {mobileOpen && <div className="tl-sidebar-overlay" style={{ display: 'block' }} onClick={() => setMobileOpen(false)} />}
 
       {/* Sidebar */}
-      <aside 
+      <motion.aside 
         ref={sidebarRef}
         className={`tl-sidebar ${mobileOpen ? 'mobile-open' : ''}`}
-        style={{ width: sidebarOpen ? 'var(--tl-sidebar-width)' : 'var(--tl-sidebar-collapsed)' }}
+        initial={false}
+        animate={{ width: sidebarOpen ? 264 : 76 }}
+        transition={{ type: 'spring', stiffness: 300, damping: 30 }}
       >
         {/* Sidebar Header */}
         <div className="tl-sidebar-header" style={{ justifyContent: sidebarOpen ? 'space-between' : 'center' }}>
@@ -111,14 +113,6 @@ export default function DashboardLayout() {
                 className="d-flex align-items-center gap-2"
                 style={{ overflow: 'hidden', whiteSpace: 'nowrap' }}
               >
-                <div style={{
-                  width: 32, height: 32, borderRadius: 'var(--tl-radius-sm)',
-                  background: 'var(--tl-gradient-primary)',
-                  display: 'flex', alignItems: 'center', justifyContent: 'center',
-                  boxShadow: '0 2px 8px rgba(var(--tl-primary-rgb), 0.3)', flexShrink: 0
-                }}>
-                  <Shield size={16} color="#fff" />
-                </div>
                 <span style={{ fontWeight: 700, fontSize: '1rem', color: 'var(--tl-text-primary)' }}>
                   Threat<span className="text-gradient">Lens</span>
                 </span>
@@ -156,10 +150,15 @@ export default function DashboardLayout() {
             </AnimatePresence>
           </button>
         </div>
-      </aside>
+      </motion.aside>
 
       {/* Main Content */}
-      <div className={`tl-main-content ${!sidebarOpen ? 'collapsed' : ''}`}>
+      <motion.div 
+        className={`tl-main-content ${mobileOpen ? 'mobile-open' : ''}`}
+        initial={false}
+        animate={{ marginLeft: mobileOpen ? 0 : (sidebarOpen ? 264 : 76) }}
+        transition={{ type: 'spring', stiffness: 300, damping: 30 }}
+      >
         {/* Navbar */}
         <header className="tl-navbar">
           <div className="d-flex align-items-center gap-3">
@@ -185,12 +184,12 @@ export default function DashboardLayout() {
             <div style={{ width: 1, height: 24, background: 'var(--tl-border)', margin: '0 0.25rem' }} />
 
             <Link to="/profile" className="d-flex align-items-center gap-2 text-decoration-none" style={{ padding: '0.375rem' }}>
-              <div className="tl-avatar">{initials}</div>
-              <div className="d-none d-md-block" style={{ lineHeight: 1.2 }}>
-                <div style={{ fontSize: '0.8125rem', fontWeight: 500, color: 'var(--tl-text-primary)' }}>
-                  {user?.username || 'User'}
-                </div>
-                <div style={{ fontSize: '0.6875rem', color: 'var(--tl-text-faint)' }}>Pro Plan</div>
+              <div className="tl-avatar" style={{ overflow: 'hidden' }}>
+                {user?.profile?.avatar_url ? (
+                  <img src={user.profile.avatar_url} alt="Avatar" style={{ width: '100%', height: '100%', objectFit: 'cover' }} />
+                ) : (
+                  initials
+                )}
               </div>
             </Link>
           </div>
@@ -207,7 +206,7 @@ export default function DashboardLayout() {
             <Outlet />
           </motion.div>
         </div>
-      </div>
+      </motion.div>
     </div>
   );
 }

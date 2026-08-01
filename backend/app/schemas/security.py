@@ -1,4 +1,4 @@
-from pydantic import BaseModel
+from pydantic import BaseModel, ConfigDict
 from typing import Optional, Any, Dict
 from datetime import datetime
 
@@ -18,8 +18,7 @@ class AuditLogResponse(AuditLogBase):
     user_id: Optional[int] = None
     created_at: datetime
 
-    class Config:
-        from_attributes = True
+    model_config = ConfigDict(from_attributes=True)
 
 
 class UserSessionBase(BaseModel):
@@ -38,5 +37,4 @@ class UserSessionResponse(UserSessionBase):
     is_revoked: bool
     created_at: datetime
 
-    class Config:
-        from_attributes = True
+    model_config = ConfigDict(from_attributes=True)

@@ -2,17 +2,15 @@ import React, { useState } from 'react';
 import { useLocation } from 'react-router-dom';
 import { motion } from 'framer-motion';
 import {
-  Search, Globe, ShieldAlert, Activity, FileText, ChevronRight,
-  CheckCircle, AlertTriangle, XCircle, Link as LinkIcon, Database,
-  Clock, Server, Shield, Info, Lock, Unlock, Calendar, MapPin
+  Search, Globe, ShieldAlert, Activity, FileText, ChevronRight, Brain, Download
 } from 'lucide-react';
 import api from '../utils/axios';
 import { Button } from '../components/ui/Button';
-import { Badge } from '../components/ui/Badge';
 import { PageHeader } from '../components/ui/PageHeader';
 import InvestigationProgress from '../components/investigation/InvestigationProgress';
 
 import UrlReportView from '../components/investigation/UrlReportView';
+import AIInsightsModal from '../components/investigation/AIInsightsModal';
 
 // ── Investigation Steps ───────────────────────────────────────────────── //
 
@@ -33,6 +31,7 @@ export default function UrlInvestigation() {
   const [isInvestigating, setIsInvestigating] = useState(false);
   const [isBackendComplete, setIsBackendComplete] = useState(false);
   const [showReport, setShowReport] = useState(false);
+  const [showAIModal, setShowAIModal] = useState(false);
 
   const [result, setResult] = useState(null);
   const [error, setError] = useState(null);
@@ -49,13 +48,26 @@ export default function UrlInvestigation() {
 
     try {
       const response = await api.post('/api/v1/investigation/url', { url });
-      setResult(response.data.result_data);
+      setResult(response.data);
       setIsBackendComplete(true);
     } catch (err) {
       console.error('Investigation failed:', err);
       setError(err.response?.data?.detail || 'An error occurred during the investigation.');
       setIsInvestigating(false);
     }
+  };
+
+  const handleExport = () => {
+    if (!result) return;
+    const blob = new Blob([JSON.stringify(result, null, 2)], { type: 'application/json' });
+    const blobUrl = window.URL.createObjectURL(blob);
+    const link = document.createElement('a');
+    link.href = blobUrl;
+    link.setAttribute('download', `investigation_${result.id || 'url'}.json`);
+    document.body.appendChild(link);
+    link.click();
+    link.parentNode.removeChild(link);
+    window.URL.revokeObjectURL(blobUrl);
   };
 
   return (
@@ -108,7 +120,28 @@ export default function UrlInvestigation() {
 
       {/* ── Results ── */}
       {showReport && result && (
-        <UrlReportView result={result} />
+        <div className="d-flex flex-column gap-4">
+          <div className="d-flex justify-content-between align-items-center">
+            <h5 style={{ color: 'var(--tl-text-primary)', margin: 0, fontWeight: 600 }}>Investigation Report</h5>
+            <div className="d-flex gap-2">
+              <Button variant="primary" size="sm" icon={<Brain size={16} />} onClick={() => setShowAIModal(true)}>
+                AI Analysis
+              </Button>
+              <Button variant="secondary" size="sm" icon={<Download size={16} />} onClick={handleExport}>
+                Export Report
+              </Button>
+            </div>
+          </div>
+          <UrlReportView result={result.result_data} />
+          
+          <AIInsightsModal
+            isOpen={showAIModal}
+            onClose={() => setShowAIModal(false)}
+            aiAnalysis={result?.result_data?.ai_analysis}
+            investigationId={result?.id}
+            investigationType={result?.type}
+          />
+        </div>
       )}
     </div>
   );

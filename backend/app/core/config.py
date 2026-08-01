@@ -1,7 +1,8 @@
 import os
-from pydantic_settings import BaseSettings
+from pydantic_settings import BaseSettings, SettingsConfigDict
 
 class Settings(BaseSettings):
+    model_config = SettingsConfigDict(env_file=".env", case_sensitive=True)
     PROJECT_NAME: str = "ThreatLens AI"
     VERSION: str = "1.0.0"
     
@@ -11,9 +12,20 @@ class Settings(BaseSettings):
     JWT_ALGORITHM: str = os.getenv("JWT_ALGORITHM", "HS256")
     ACCESS_TOKEN_EXPIRE_MINUTES: int = 1440 # Increased from 60 to 1440 (24 hours) for development
     
+    # SMTP Configuration for Email
+    SMTP_SERVER: str | None = os.getenv("SMTP_SERVER", "smtp.gmail.com")
+    SMTP_PORT: int = int(os.getenv("SMTP_PORT", "587"))
+    SMTP_USERNAME: str | None = os.getenv("SMTP_USERNAME")
+    SMTP_PASSWORD: str | None = os.getenv("SMTP_PASSWORD")
+    
     GROQ_API_KEY: str | None = None
     TAVILY_API_KEY: str | None = None
     OCR_LANGUAGE: str | None = "eng"
+    
+    # Cloudinary Configuration
+    CLOUDINARY_CLOUD_NAME: str | None = os.getenv("CLOUDINARY_CLOUD_NAME")
+    CLOUDINARY_API_KEY: str | None = os.getenv("CLOUDINARY_API_KEY")
+    CLOUDINARY_API_SECRET: str | None = os.getenv("CLOUDINARY_API_SECRET")
     
     # AI Intelligence Engine (Phase 9)
     AI_PROVIDER: str = os.getenv("AI_PROVIDER", "groq")
@@ -28,9 +40,5 @@ class Settings(BaseSettings):
     BACKUP_DIR: str = os.getenv("BACKUP_DIR", "./backups")
     BACKUP_CRON_HOUR: int = int(os.getenv("BACKUP_CRON_HOUR", "0"))
     BACKUP_CRON_MINUTE: int = int(os.getenv("BACKUP_CRON_MINUTE", "0"))
-    
-    class Config:
-        env_file = ".env"
-        case_sensitive = True
 
 settings = Settings()

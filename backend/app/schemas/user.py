@@ -1,4 +1,4 @@
-from pydantic import BaseModel, EmailStr, Field
+from pydantic import BaseModel, ConfigDict, EmailStr, Field
 from typing import Optional
 from datetime import datetime
 
@@ -9,14 +9,13 @@ class ProfileBase(BaseModel):
     avatar_url: Optional[str] = None
 
 class ProfileUpdate(ProfileBase):
-    pass
+    email: Optional[EmailStr] = None
 
 class ProfileResponse(ProfileBase):
     id: int
     user_id: int
 
-    class Config:
-        from_attributes = True
+    model_config = ConfigDict(from_attributes=True)
 
 class UserBase(BaseModel):
     email: EmailStr
@@ -39,11 +38,11 @@ class UserResponse(UserBase):
     created_at: datetime
     profile: Optional[ProfileResponse] = None
 
-    class Config:
-        from_attributes = True
+    model_config = ConfigDict(from_attributes=True)
 
 class PasswordReset(BaseModel):
-    token: str
+    email: EmailStr
+    otp: str
     new_password: str = Field(..., min_length=8)
 
 class ForgotPassword(BaseModel):

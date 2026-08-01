@@ -1,12 +1,13 @@
 import React, { useState, useRef } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { motion, AnimatePresence } from 'framer-motion';
-import { Upload, ScanLine, ShieldAlert, Download, QrCode, ShieldCheck, AlertTriangle, Link as LinkIcon, Mail, PhoneCall, Wifi, User, CheckCircle, XCircle, FileJson, ChevronDown, ChevronRight, Activity } from 'lucide-react';
+import { Upload, ScanLine, ShieldAlert, Download, QrCode, ShieldCheck, AlertTriangle, Link as LinkIcon, Mail, PhoneCall, Wifi, User, CheckCircle, XCircle, FileJson, ChevronDown, ChevronRight, Activity, Brain } from 'lucide-react';
 import api from '../utils/axios';
 import { Button } from '../components/ui/Button';
 import { Badge } from '../components/ui/Badge';
 import { PageHeader } from '../components/ui/PageHeader';
 import InvestigationProgress from '../components/investigation/InvestigationProgress';
+import AIInsightsModal from '../components/investigation/AIInsightsModal';
 
 const ThreatGauge = ({ score }) => {
   let color = 'var(--tl-success)';
@@ -56,6 +57,8 @@ export default function QrInvestigation() {
   const [showRawPayload, setShowRawPayload] = useState(false);
 
   const [result, setResult] = useState(null);
+  const [investigation, setInvestigation] = useState(null);
+  const [showAIModal, setShowAIModal] = useState(false);
   const [error, setError] = useState(null);
   const fileInputRef = useRef(null);
   const navigate = useNavigate();
@@ -108,6 +111,7 @@ export default function QrInvestigation() {
     setShowReport(false);
     setError(null);
     setResult(null);
+    setInvestigation(null);
     setShowRawPayload(false);
     
     const formData = new FormData();
@@ -118,11 +122,25 @@ export default function QrInvestigation() {
           headers: { 'Content-Type': 'multipart/form-data' }
       });
       setResult(res.data.result_data);
+      setInvestigation(res.data);
       setIsBackendComplete(true);
     } catch (err) {
       setError(err.response?.data?.detail || 'An error occurred during QR analysis.');
       setIsInvestigating(false);
     }
+  };
+
+  const handleExport = () => {
+    if (!investigation) return;
+    const blob = new Blob([JSON.stringify(investigation, null, 2)], { type: 'application/json' });
+    const blobUrl = window.URL.createObjectURL(blob);
+    const link = document.createElement('a');
+    link.href = blobUrl;
+    link.setAttribute('download', `investigation_${investigation.id || 'qr'}.json`);
+    document.body.appendChild(link);
+    link.click();
+    link.parentNode.removeChild(link);
+    window.URL.revokeObjectURL(blobUrl);
   };
 
   const handleDeepInvestigate = (typeOverride, targetOverride) => {
@@ -247,6 +265,13 @@ export default function QrInvestigation() {
         {showReport && result && (
             <div className="col-12">
                 <motion.div initial={{ opacity: 0, y: 20 }} animate={{ opacity: 1, y: 0 }} transition={{ duration: 0.5 }}>
+                    <div className="d-flex justify-content-between align-items-center mb-4">
+                        <h5 style={{ color: 'var(--tl-text-primary)', margin: 0, fontWeight: 600 }}>Investigation Report</h5>
+                        <div className="d-flex gap-2">
+                            <Button variant="primary" size="sm" icon={<Brain size={16} />} onClick={() => setShowAIModal(true)}>AI Analysis</Button>
+                            <Button variant="secondary" size="sm" icon={<Download size={16} />} onClick={handleExport}>Export Report</Button>
+                        </div>
+                    </div>
                     
                     <div className="row g-4 mb-4">
                         
@@ -454,6 +479,13 @@ export default function QrInvestigation() {
                         </div>
                     </div>
                     
+                    <AIInsightsModal
+                        isOpen={showAIModal}
+                        onClose={() => setShowAIModal(false)}
+                        aiAnalysis={result?.ai_analysis}
+                        investigationId={investigation?.id}
+                        investigationType={investigation?.type}
+                    />
                 </motion.div>
             </div>
         )}

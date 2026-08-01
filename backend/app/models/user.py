@@ -29,3 +29,13 @@ class Profile(Base):
     avatar_url = Column(String, nullable=True)
 
     user = relationship("User", back_populates="profile")
+
+class PasswordResetOTP(Base):
+    __tablename__ = "password_resets"
+
+    id = Column(Integer, primary_key=True, index=True)
+    user_id = Column(Integer, ForeignKey("users.id"), unique=True, nullable=False)
+    otp = Column(String, nullable=False)
+    expires_at = Column(DateTime(timezone=True), nullable=False)
+
+    user = relationship("User")

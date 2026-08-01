@@ -1,6 +1,6 @@
 from datetime import timedelta
 from typing import Any
-from fastapi import APIRouter, Depends, HTTPException, status
+from fastapi import APIRouter, Depends, HTTPException, status, UploadFile, File
 from fastapi.security import OAuth2PasswordRequestForm
 from sqlalchemy.orm import Session
 from datetime import datetime, timezone, timedelta
@@ -20,6 +20,11 @@ from app.repositories.user_repository import user_repository
 from app.services.security_service import SecurityService
 from app.schemas.security import UserSessionCreate
 from fastapi import Request
+import random
+from app.models.user import PasswordResetOTP
+from app.services.email_service import email_service
+import cloudinary
+import cloudinary.uploader
 
 router = APIRouter()
 
@@ -103,6 +108,33 @@ def update_profile(
         raise HTTPException(status_code=404, detail="Profile not found")
     return profile
 
+@router.post("/avatar")
+def upload_avatar(
+    file: UploadFile = File(...),
+    current_user: User = Depends(get_current_user),
+    db: Session = Depends(get_db)
+) -> Any:
+    if not settings.CLOUDINARY_API_KEY:
+        raise HTTPException(status_code=500, detail="Cloudinary configuration is missing")
+        
+    cloudinary.config(
+        cloud_name=settings.CLOUDINARY_CLOUD_NAME,
+        api_key=settings.CLOUDINARY_API_KEY,
+        api_secret=settings.CLOUDINARY_API_SECRET
+    )
+    
+    try:
+        result = cloudinary.uploader.upload(file.file)
+        secure_url = result.get("secure_url")
+        if not secure_url:
+            raise Exception("Failed to get secure URL from Cloudinary")
+            
+        user_repository.update_profile(db, user_id=current_user.id, obj_in=ProfileUpdate(avatar_url=secure_url))
+        
+        return {"secure_url": secure_url}
+    except Exception as e:
+        raise HTTPException(status_code=500, detail=str(e))
+
 @router.post("/forgot-password")
 def forgot_password(
     forgot_in: ForgotPassword,
@@ -110,33 +142,50 @@ def forgot_password(
 ) -> Any:
     user = user_repository.get_by_email(db, email=forgot_in.email)
     if user:
-        # Generate password reset token
-        # For Phase 2, we simulate sending email.
-        # token = generate_password_reset_token(email=user.email)
-        # send_reset_password_email(email_to=user.email, email=user.email, token=token)
-        print(f"Simulated Email to {user.email}: Password Reset Link. Use Token: SIMULATED_TOKEN_{user.id}")
+        otp = str(random.randint(100000, 999999))
+        expires_at = datetime.now(timezone.utc) + timedelta(minutes=15)
         
-    # Always return 200 to prevent user enumeration
-    return {"message": "If an account with that email exists, we sent an email with password reset instructions."}
+        existing_otp = db.query(PasswordResetOTP).filter(PasswordResetOTP.user_id == user.id).first()
+        if existing_otp:
+            existing_otp.otp = otp
+            existing_otp.expires_at = expires_at
+        else:
+            new_otp = PasswordResetOTP(user_id=user.id, otp=otp, expires_at=expires_at)
+            db.add(new_otp)
+            
+        db.commit()
+        
+        email_service.send_otp_email(to_email=user.email, otp=otp)
+        
+    return {"message": "If an account with that email exists, we sent an email with a verification code."}
 
 @router.post("/reset-password")
 def reset_password(
     reset_in: PasswordReset,
     db: Session = Depends(get_db)
 ) -> Any:
-    # Simulated validation of SIMULATED_TOKEN_{user.id}
-    token = reset_in.token
-    if not token.startswith("SIMULATED_TOKEN_"):
-        raise HTTPException(status_code=400, detail="Invalid token")
-        
-    try:
-        user_id = int(token.split("_")[-1])
-    except ValueError:
-        raise HTTPException(status_code=400, detail="Invalid token")
-        
-    user = user_repository.get(db, user_id=user_id)
+    user = user_repository.get_by_email(db, email=reset_in.email)
     if not user:
-        raise HTTPException(status_code=404, detail="User not found")
+        raise HTTPException(status_code=400, detail="Invalid OTP or email")
         
-    user_repository.update_password(db, user_id=user_id, new_password=reset_in.new_password)
+    otp_record = db.query(PasswordResetOTP).filter(PasswordResetOTP.user_id == user.id).first()
+    if not otp_record or otp_record.otp != reset_in.otp:
+        raise HTTPException(status_code=400, detail="Invalid OTP")
+        
+    now = datetime.now(timezone.utc)
+    
+    # Handle SQLite timezone stripping
+    expires_at = otp_record.expires_at
+    if expires_at.tzinfo is None:
+        if expires_at < now.replace(tzinfo=None):
+            raise HTTPException(status_code=400, detail="OTP has expired")
+    else:
+        if expires_at < now:
+            raise HTTPException(status_code=400, detail="OTP has expired")
+            
+    user_repository.update_password(db, user_id=user.id, new_password=reset_in.new_password)
+    
+    db.delete(otp_record)
+    db.commit()
+    
     return {"message": "Password updated successfully"}
