@@ -173,11 +173,7 @@ export default function DashboardLayout() {
           </div>
 
           <div className="d-flex align-items-center gap-2">
-            <div className="tl-search-bar d-none d-md-block">
-              <Search className="search-icon" size={16} />
-              <input type="text" placeholder="Search..." />
-              <span className="search-shortcut">⌘K</span>
-            </div>
+            {/* Search removed by request */}
 
             <NotificationCenter />
 

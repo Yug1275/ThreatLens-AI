@@ -1,5 +1,5 @@
 import React, { useState, useEffect, useCallback } from 'react';
-import { useNavigate } from 'react-router-dom';
+import { useNavigate, useSearchParams } from 'react-router-dom';
 import { motion, AnimatePresence } from 'framer-motion';
 import {
   History, Search, Filter, Trash2, ExternalLink, ChevronLeft, ChevronRight,
@@ -151,6 +151,7 @@ const WORKFLOW_STATUSES = ['NEW', 'IN_PROGRESS', 'RESOLVED', 'CLOSED'];
 
 export default function AnalystWorkspace() {
   const navigate = useNavigate();
+  const [searchParams] = useSearchParams();
 
   // Data state
   const [items, setItems]       = useState([]);
@@ -167,8 +168,8 @@ export default function AnalystWorkspace() {
   const [page, setPage]         = useState(1);
   const [typeFilter, setType]   = useState('');
   const [statusFilter, setStatus] = useState('');
-  const [search, setSearch]     = useState('');
-  const [debouncedSearch, setDebouncedSearch] = useState('');
+  const [search, setSearch]     = useState(searchParams.get('q') || '');
+  const [debouncedSearch, setDebouncedSearch] = useState(searchParams.get('q') || '');
   const [sortBy, setSortBy]     = useState('created_at');
   const [sortOrder, setSortOrder] = useState('desc');
   const [viewFavorites, setViewFavorites] = useState(false);
@@ -204,6 +205,14 @@ export default function AnalystWorkspace() {
     }, 400);
     return () => clearTimeout(handler);
   }, [search]);
+
+  // Sync from URL search params
+  useEffect(() => {
+    const q = searchParams.get('q');
+    if (q !== null && q !== search) {
+      setSearch(q);
+    }
+  }, [searchParams]);
 
   // ── Fetch ── //
   const fetchWorkspaceData = async () => {

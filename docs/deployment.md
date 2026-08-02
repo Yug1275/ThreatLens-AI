@@ -43,6 +43,8 @@ Go to the **Table Editor** in Supabase and verify that the core tables (`users`,
    - `GROQ_API_KEY` = (Your Groq AI API Key)
    - `TAVILY_API_KEY` = (Your Tavily API Key)
    - `AI_PROVIDER` = `groq`
+   - `SMTP_SERVER`, `SMTP_PORT`, `SMTP_USERNAME`, `SMTP_PASSWORD` = (Your email provider details for OTPs)
+   - `CLOUDINARY_CLOUD_NAME`, `CLOUDINARY_API_KEY`, `CLOUDINARY_API_SECRET` = (Your Cloudinary credentials for avatars)
 5. Click **Create Web Service**.
 
 **Verification**:

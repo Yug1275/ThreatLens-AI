@@ -71,12 +71,12 @@ const ScoreArc = ({ score }) => {
 
 // ── Stats Bar ─────────────────────────────────────────────────────────── //
 
-const StatsBar = ({ items }) => {
-  const total     = items.length;
-  const malicious = items.filter(i => (i.threat_score ?? 0) > 75).length;
-  const suspicious = items.filter(i => { const s = i.threat_score ?? 0; return s > 40 && s <= 75; }).length;
-  const safe      = items.filter(i => (i.threat_score ?? 0) <= 40).length;
-  const avg       = total > 0 ? Math.round(items.reduce((a, b) => a + (b.threat_score ?? 0), 0) / total) : 0;
+const StatsBar = ({ stats }) => {
+  const total = stats?.total || 0;
+  const malicious = stats?.malicious || 0;
+  const suspicious = stats?.suspicious || 0;
+  const safe = stats?.safe || 0;
+  const avg = stats?.average_score ? Math.round(stats.average_score) : 0;
 
   const STATS = [
     { label: 'Total Reports', value: total, color: '--tl-primary-rgb', Icon: FileText },
@@ -191,6 +191,7 @@ export default function Reports() {
   const [items, setItems]     = useState([]);
   const [total, setTotal]     = useState(0);
   const [pages, setPages]     = useState(1);
+  const [stats, setStats]     = useState(null);
   const [loading, setLoading] = useState(true);
   const [error, setError]     = useState(null);
   const [page, setPage]       = useState(1);
@@ -201,14 +202,18 @@ export default function Reports() {
     setLoading(true);
     setError(null);
     try {
-      const data = await investigationService.getAll({
-        page, limit: LIMIT,
-        type: typeFilter || undefined,
-        status: 'COMPLETED',   // Reports page only shows completed investigations
-      });
+      const [data, statsRes] = await Promise.all([
+        investigationService.getAll({
+          page, limit: LIMIT,
+          type: typeFilter || undefined,
+          status: 'COMPLETED',   // Reports page only shows completed investigations
+        }),
+        api.get('/api/v1/dashboard/stats').catch(() => ({ data: null }))
+      ]);
       setItems(data.items);
       setTotal(data.total);
       setPages(data.pages);
+      if (statsRes.data) setStats(statsRes.data);
     } catch (e) {
       setError(e.response?.data?.detail || 'Failed to load reports.');
     } finally {
@@ -244,7 +249,7 @@ export default function Reports() {
       />
 
       {/* Stats */}
-      {!loading && !error && <StatsBar items={items} />}
+      {!loading && !error && <StatsBar stats={stats} />}
 
       {/* Filters & Export */}
       <div className="d-flex justify-content-between align-items-center mb-4 flex-wrap gap-3">
