@@ -18,6 +18,9 @@ class Settings(BaseSettings):
     SMTP_USERNAME: str | None = os.getenv("SMTP_USERNAME")
     SMTP_PASSWORD: str | None = os.getenv("SMTP_PASSWORD")
     
+    # Resend API Key for HTTP-based emails
+    RESEND_API_KEY: str | None = os.getenv("RESEND_API_KEY")
+    
     GROQ_API_KEY: str | None = None
     TAVILY_API_KEY: str | None = None
     OCR_LANGUAGE: str | None = "eng"

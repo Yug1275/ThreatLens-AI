@@ -1,6 +1,4 @@
-import smtplib
-from email.mime.text import MIMEText
-from email.mime.multipart import MIMEMultipart
+import httpx
 from app.core.config import settings
 import logging
 
@@ -9,14 +7,14 @@ logger = logging.getLogger("auth.email")
 class EmailService:
     @staticmethod
     def send_otp_email(to_email: str, otp: str):
-        if not settings.SMTP_USERNAME or not settings.SMTP_PASSWORD:
-            logger.warning(f"SMTP credentials not configured. OTP generated for {to_email}: {otp}")
+        if not settings.RESEND_API_KEY:
+            logger.warning(f"RESEND_API_KEY not configured. OTP generated for {to_email}: {otp}")
             return False
 
-        msg = MIMEMultipart()
-        msg['From'] = settings.SMTP_USERNAME
-        msg['To'] = to_email
-        msg['Subject'] = "ThreatLens AI - Password Reset Verification Code"
+        headers = {
+            "Authorization": f"Bearer {settings.RESEND_API_KEY}",
+            "Content-Type": "application/json"
+        }
         
         body = f"""Hello,
 
@@ -29,18 +27,26 @@ This code is valid for 15 minutes. If you did not request this, please ignore th
 Best regards,
 ThreatLens AI Security Team
 """
-        msg.attach(MIMEText(body, 'plain'))
+        
+        # Free resend accounts can only send from onboarding@resend.dev to the verified email
+        # If the user verified a domain, they can change the 'from' address
+        payload = {
+            "from": "onboarding@resend.dev",
+            "to": [to_email],
+            "subject": "ThreatLens AI - Password Reset Verification Code",
+            "text": body
+        }
         
         try:
-            server = smtplib.SMTP(settings.SMTP_SERVER, settings.SMTP_PORT)
-            server.starttls()
-            server.login(settings.SMTP_USERNAME, settings.SMTP_PASSWORD)
-            server.send_message(msg)
-            server.quit()
-            logger.info(f"OTP email sent successfully to {to_email}")
-            return True
+            with httpx.Client() as client:
+                response = client.post("https://api.resend.com/emails", json=payload, headers=headers, timeout=10.0)
+                response.raise_for_status()
+                logger.info(f"OTP email sent successfully via Resend to {to_email}")
+                return True
         except Exception as e:
-            logger.error(f"Failed to send email to {to_email}: {e}")
+            logger.error(f"Failed to send email to {to_email} via Resend: {e}")
+            if hasattr(e, 'response') and e.response:
+                logger.error(f"Response: {e.response.text}")
             return False
 
 email_service = EmailService()
