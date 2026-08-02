@@ -13,6 +13,8 @@ Unifies threat detection by combining deterministic OSINT analysis with an intel
 ![PostgreSQL](https://img.shields.io/badge/Database-PostgreSQL-4169E1?style=for-the-badge&logo=postgresql)
 ![Python](https://img.shields.io/badge/Python-3-3776AB?style=for-the-badge&logo=python)
 
+[![Live Demo](https://img.shields.io/badge/🚀%20Live%20Demo-ThreatLens%20AI-success?style=for-the-badge)](https://threat-lens-ai-yug.vercel.app/)
+
 </div>
 
 ---
@@ -37,18 +39,58 @@ Unifies threat detection by combining deterministic OSINT analysis with an intel
 
 # ✨ About ThreatLens AI
 
-ThreatLens AI unifies threat detection by combining deterministic OSINT analysis (WHOIS, DNS, SSL) with an intelligent Large Language Model (LLM) engine. Designed for security analysts, it accepts URLs, phone numbers, and images (OCR) to automatically orchestrate deep investigations and generate actionable mitigation reports.
+ThreatLens AI is an enterprise-grade AI-powered Cyber Threat Intelligence Platform that enables security analysts and organizations to investigate multiple threat vectors through a single unified interface.
 
-Whether you're investigating a suspicious URL, tracking down a malicious phone number, or extracting text from a potential phishing email screenshot, ThreatLens AI provides a fast, secure, and scalable solution.
+The platform supports deep investigations for:
+
+- 🌐 URLs
+- 📧 Emails
+- 📱 Phone Numbers
+- 🔳 QR Codes
+- 🖼 Images (OCR)
+
+ThreatLens AI combines deterministic threat analysis (WHOIS, DNS, SSL, OCR, QR decoding, metadata extraction, and validation) with AI-powered intelligence to generate executive summaries, technical reports, IOC correlation, threat explanations, and mitigation recommendations.
+
+The platform also includes investigation history, reports, analyst workspace, notifications, dashboards, and security monitoring to streamline cyber threat investigations.
 
 ---
 
 # ✨ Features
 
 ## 🔍 Multi-Modal Investigations
-- **URL Analysis**: Deep scan of domains including WHOIS and DNS records.
-- **Phone Number Recon**: Extract carrier and geographic intelligence.
-- **Image OCR**: Extract text and potential threats from images using EasyOCR.
+
+- 🌐 URL Investigation
+  - WHOIS Lookup
+  - DNS Analysis
+  - SSL Inspection
+  - Redirect Chain Analysis
+  - Threat Scoring
+
+- 📧 Email Investigation
+  - Header Analysis
+  - SPF / DKIM / DMARC Validation
+  - Phishing Detection
+  - Typosquatting Detection
+  - IOC Extraction
+
+- 📱 Phone Investigation
+  - Number Validation
+  - Carrier Detection
+  - Geographic Intelligence
+  - Scam Detection
+
+- 🖼 OCR Investigation
+  - EasyOCR Text Extraction
+  - Threat Detection
+  - Entity Extraction
+  - Deep Investigation Routing
+
+- 🔳 QR Investigation
+  - QR Decoding
+  - Payload Classification
+  - Safe Preview
+  - IOC Extraction
+  - Deep Investigation Routing
 
 ## 🧠 AI Intelligence Engine
 - **Contextual Analysis**: Contextual analysis of IOCs using Groq/Llama-3.
@@ -84,76 +126,9 @@ Whether you're investigating a suspicious URL, tracking down a malicious phone n
 
 # 🏗 System Architecture
 
-```mermaid
-flowchart TD
-    %% Styling
-    classDef frontend fill:#E8EAF6,stroke:#3F51B5,stroke-width:2px,color:#1A237E
-    classDef backend fill:#E0F2F1,stroke:#009688,stroke-width:2px,color:#004D40
-    classDef db fill:#FFF9C4,stroke:#FBC02D,stroke-width:2px,color:#F57F17
-    classDef external fill:#FCE4EC,stroke:#E91E63,stroke-width:2px,color:#880E4F
-
-    %% Client
-    Browser[Browser Client]
-
-    %% Frontend
-    subgraph FrontendApp [Frontend (React 19 + Vite)]
-        Pages[Pages<br/>Dashboard, Investigations]
-        APIClient[API Service Client]
-        Pages --> APIClient
-    end
-
-    %% Backend
-    subgraph BackendApp [Backend (FastAPI App)]
-        APIRoutes[API Routes]
-        
-        Classifier{Input Type Classifier}
-        
-        URLMod[URL Analyzer<br/>WHOIS, DNS]
-        PhoneMod[Phone Analyzer<br/>Carrier, Geo]
-        ImageMod[OCR Pipeline<br/>EasyOCR]
-        
-        AIEngine[AI Intelligence Engine<br/>Groq/Llama-3]
-        Fallback[Deterministic Threat Scorer]
-
-        APIRoutes --> Classifier
-        
-        Classifier -->|URL| URLMod
-        Classifier -->|Phone| PhoneMod
-        Classifier -->|Image| ImageMod
-        
-        URLMod --> AIEngine
-        PhoneMod --> AIEngine
-        ImageMod --> AIEngine
-        
-        AIEngine --> Fallback
-    end
-
-    %% Database
-    subgraph Database [Database]
-        Supabase[(Supabase<br/>PostgreSQL)]
-    end
-
-    %% External Services
-    subgraph External [External Services]
-        GroqAPI((Groq API))
-        TavilyAPI((Tavily Search API))
-    end
-
-    %% Connections
-    Browser -->|HTTPS| Pages
-    APIClient -->|REST/JSON| APIRoutes
-    
-    AIEngine <-->|API Calls| GroqAPI
-    URLMod <-->|Search| TavilyAPI
-    
-    BackendApp <--> Supabase
-    
-    %% Hosting Note
-    class FrontendApp,Pages,APIClient frontend
-    class BackendApp,APIRoutes,Classifier,URLMod,PhoneMod,ImageMod,AIEngine,Fallback backend
-    class Database,Supabase db
-    class External,GroqAPI,TavilyAPI external
-```
+<p align="center">
+  <img src="./docs/architecture_diagram.png" alt="ThreatLens AI System Architecture" width="100%" />
+</p>
 
 
 ---
@@ -169,11 +144,11 @@ sequenceDiagram
     participant Frontend as React Frontend
     participant Backend as FastAPI Backend
     participant DB as PostgreSQL
-    participant OSINT as OSINT Tools (WHOIS/DNS)
+    participant OSINT as OSINT & Forensics (WHOIS/DNS/Headers/OCR/QR)
     participant AI as AI Engine (Groq/Llama-3)
 
     %% 1. Analyst initiates investigation
-    Analyst->>Frontend: Submit IOC (URL, Phone, Image)
+    Analyst->>Frontend: Submit IOC (URL, Email, Phone, QR, Image)
     activate Frontend
     Frontend->>Backend: Request investigation with JWT
     activate Backend
@@ -186,15 +161,15 @@ sequenceDiagram
     deactivate DB
     
     %% 3. Deterministic OSINT Gathering
-    Backend->>OSINT: Query WHOIS, DNS, or OCR extraction
+    Backend->>OSINT: Query WHOIS, DNS, Email headers, Phone carrier, QR decoder, or OCR extraction
     activate OSINT
-    OSINT-->>Backend: Return deterministic data
+    OSINT-->>Backend: Return deterministic data & threat score
     deactivate OSINT
     
     %% 4. AI Contextual Analysis
     Backend->>AI: Send OSINT data for contextual analysis
     activate AI
-    AI-->>Backend: Return executive summary & mitigation
+    AI-->>Backend: Return executive summary, MITRE mapping & mitigation
     deactivate AI
     
     %% 5. Save Results
@@ -220,22 +195,45 @@ ThreatLens-AI/
 │   ├── public/             # Static assets (Logos, Icons)
 │   ├── src/                
 │   │   ├── components/     # Reusable UI components
-│   │   ├── pages/          # Application pages (Dashboard, Investigation)
-│   │   └── utils/          # Frontend utilities & API calls
+│   │   ├── context/        # React Context (AuthContext, NotificationContext)
+│   │   ├── hooks/          # Custom React Hooks
+│   │   ├── layouts/        # Layout wrappers (DashboardLayout, MainLayout)
+│   │   ├── pages/          # Application Pages
+│   │   │   ├── Dashboard
+│   │   │   ├── URL Investigation
+│   │   │   ├── Email Investigation
+│   │   │   ├── Phone Investigation
+│   │   │   ├── QR Investigation
+│   │   │   ├── OCR Investigation
+│   │   │   ├── Reports
+│   │   │   ├── History
+│   │   │   ├── Workspace / IOC Repository
+│   │   │   ├── Notifications
+│   │   │   └── Settings
+│   │   ├── services/       # API Client Services (investigationService, aiService, etc.)
+│   │   └── utils/          # Frontend utilities (Axios instance)
 │   ├── package.json        
 │   └── vite.config.js      
 │
 ├── backend/                # FastAPI Backend
 │   ├── app/             
-│   │   ├── api/            # API Route definitions (v1)
-│   │   ├── core/           # Security, config, exceptions
-│   │   ├── models/         # SQLAlchemy schemas
+│   │   ├── api/            # API Route definitions (/v1/auth, /v1/investigation, /v1/ai)
+│   │   ├── core/           # Security, config, middleware, database connection
+│   │   ├── models/         # SQLAlchemy schemas (User, Investigation, AuditLog)
+│   │   ├── repositories/   # Data access repositories (user_repository, investigation_repository)
 │   │   ├── schemas/        # Pydantic validation models
-│   │   └── utils/          # Helper utilities (OCR, AI integration)
+│   │   ├── services/       # Core Business Logic & Intelligence Services
+│   │   │   ├── ai/         # AI Engine (Groq Provider, Tavily, Prompts, Confidence Engine)
+│   │   │   ├── url_investigator.py
+│   │   │   ├── email_investigator.py
+│   │   │   ├── phone_investigator.py
+│   │   │   ├── qr_investigator.py
+│   │   │   └── ocr_investigator.py
+│   │   └── utils/          # Helper utilities
 │   ├── requirements.txt        
 │   └── Dockerfile      
 │
-├── docs/                   # Project documentation
+├── docs/                   # Project documentation & Architecture assets
 ├── nginx/                  # Nginx configuration for production
 ├── docker-compose.yml      # Local dev environment
 └── README.md               # Project documentation
@@ -308,13 +306,18 @@ TAVILY_API_KEY=your_tavily_api_key
 # 📡 API Overview
 
 | Method | Endpoint | Description |
-|---------|----------|-------------|
+|--------|----------|-------------|
 | POST | `/api/v1/auth/login` | Authenticate user |
 | POST | `/api/v1/auth/register` | Register new user |
-| POST | `/api/v1/investigations/url` | Investigate a URL |
-| POST | `/api/v1/investigations/phone` | Investigate a phone number |
-| POST | `/api/v1/investigations/image` | Upload image for OCR extraction |
-| GET | `/api/v1/investigations/{id}` | Retrieve investigation report |
+| POST | `/api/v1/investigation/url` | URL Investigation |
+| POST | `/api/v1/investigation/email` | Email Investigation |
+| POST | `/api/v1/investigation/phone` | Phone Investigation |
+| POST | `/api/v1/investigation/ocr` | OCR Investigation |
+| POST | `/api/v1/investigation/qr` | QR Investigation |
+| GET | `/api/v1/investigation/{id}` | Investigation Details |
+| GET | `/api/v1/investigation/` | Investigation History (Paginated & Filtered) |
+| GET | `/api/v1/dashboard` | Dashboard Statistics |
+| GET | `/api/v1/iocs` | Global IOC Repository |
 
 ---
 
