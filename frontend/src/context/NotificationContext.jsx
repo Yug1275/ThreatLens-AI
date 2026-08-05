@@ -32,6 +32,7 @@ const Toast = ({ id, type, title, message, onClose }) => {
                 boxShadow: '0 8px 24px rgba(0,0,0,0.12)',
                 position: 'relative',
                 width: '320px',
+                maxWidth: 'calc(100vw - 2rem)',
                 zIndex: 9999
             }}
         >

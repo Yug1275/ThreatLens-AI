@@ -11,6 +11,7 @@ import NotificationCenter from '../components/NotificationCenter';
 export default function DashboardLayout() {
   const [sidebarOpen, setSidebarOpen] = useState(true);
   const [mobileOpen, setMobileOpen] = useState(false);
+  const [isMobile, setIsMobile] = useState(window.innerWidth < 992);
   const { user, logout } = useContext(AuthContext);
   const location = useLocation();
   const navigate = useNavigate();
@@ -18,6 +19,13 @@ export default function DashboardLayout() {
 
   // Close mobile sidebar on route change
   useEffect(() => { setMobileOpen(false); }, [location.pathname]);
+
+  // Listen for window resize
+  useEffect(() => {
+    const handleResize = () => setIsMobile(window.innerWidth < 992);
+    window.addEventListener('resize', handleResize);
+    return () => window.removeEventListener('resize', handleResize);
+  }, []);
 
   // Close mobile sidebar on outside click
   useEffect(() => {
@@ -154,9 +162,9 @@ export default function DashboardLayout() {
 
       {/* Main Content */}
       <motion.div 
-        className={`tl-main-content ${mobileOpen ? 'mobile-open' : ''}`}
+        className={`tl-main-content ${mobileOpen ? 'mobile-open' : ''} ${!sidebarOpen ? 'collapsed' : ''}`}
         initial={false}
-        animate={{ marginLeft: mobileOpen ? 0 : (sidebarOpen ? 264 : 76) }}
+        animate={isMobile ? { marginLeft: 0 } : { marginLeft: sidebarOpen ? 264 : 76 }}
         transition={{ type: 'spring', stiffness: 300, damping: 30 }}
       >
         {/* Navbar */}

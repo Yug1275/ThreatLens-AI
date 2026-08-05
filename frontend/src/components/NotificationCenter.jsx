@@ -60,6 +60,7 @@ export default function NotificationCenter() {
                             top: '100%',
                             marginTop: '0.75rem',
                             width: '420px',
+                            maxWidth: 'calc(100vw - 2rem)',
                             background: 'var(--tl-bg-elevated)',
                             border: '1px solid var(--tl-border)',
                             borderRadius: 'var(--tl-radius-md)',
