@@ -87,7 +87,7 @@ export default function InvestigationProgress({ steps, target, isBackendComplete
       style={{ minHeight: '600px', zIndex: 1 }}
     >
         {/* Animated Cyber Background */}
-        <div className="position-absolute top-0 start-0 w-100 h-100" style={{ zIndex: -1, background: 'radial-gradient(circle at 50% 50%, rgba(15, 23, 42, 0) 0%, rgba(15, 23, 42, 0.8) 100%)' }}>
+        <div className="position-absolute top-0 start-0 w-100 h-100" style={{ zIndex: -1, background: 'radial-gradient(circle at 50% 50%, rgba(4, 8, 18, 0) 0%, rgba(4, 8, 18, 0.8) 100%)' }}>
             {particles.map(p => (
                 <motion.div
                     key={p.id}
@@ -124,7 +124,7 @@ export default function InvestigationProgress({ steps, target, isBackendComplete
                 <div className="col-12 col-lg-6 d-flex flex-column gap-4">
                     
                     {/* Status Header */}
-                    <div className="p-4 rounded border" style={{ background: 'rgba(15, 23, 42, 0.6)', borderColor: 'rgba(255,255,255,0.05)', backdropFilter: 'blur(10px)' }}>
+                    <div className="p-4 rounded border" style={{ background: 'rgba(7, 11, 22, 0.7)', borderColor: 'rgba(56,189,248,0.06)', backdropFilter: 'blur(10px)' }}>
                         <div className="d-flex justify-content-between align-items-start mb-4">
                             <div>
                                 <div style={{ fontSize: '0.75rem', color: 'var(--tl-text-faint)', textTransform: 'uppercase', letterSpacing: '1px' }}>Target</div>
@@ -142,7 +142,7 @@ export default function InvestigationProgress({ steps, target, isBackendComplete
                             {/* Progress Ring */}
                             <div style={{ position: 'relative', width: 80, height: 80 }}>
                                 <svg viewBox="0 0 100 100" style={{ transform: 'rotate(-90deg)', width: '100%', height: '100%' }}>
-                                    <circle cx="50" cy="50" r="45" fill="none" stroke="rgba(148,163,184,0.1)" strokeWidth="6" />
+                                    <circle cx="50" cy="50" r="45" fill="none" stroke="rgba(56,189,248,0.08)" strokeWidth="6" />
                                     <motion.circle 
                                         cx="50" cy="50" r="45" fill="none" stroke="var(--tl-primary)" strokeWidth="6" 
                                         strokeDasharray="283" strokeDashoffset={283 - (progressPercentage * 2.83)}
@@ -160,7 +160,7 @@ export default function InvestigationProgress({ steps, target, isBackendComplete
                                     <span style={{ color: 'var(--tl-text-muted)' }}>Overall Progress</span>
                                     <span style={{ color: 'var(--tl-text-primary)' }}>{currentStepIndex} / {steps.length} Steps</span>
                                 </div>
-                                <div className="progress" style={{ height: 6, background: 'rgba(255,255,255,0.05)' }}>
+                                <div className="progress" style={{ height: 6, background: 'rgba(56,189,248,0.06)' }}>
                                     <motion.div 
                                         className="progress-bar" 
                                         style={{ background: 'var(--tl-primary)' }}
@@ -174,7 +174,7 @@ export default function InvestigationProgress({ steps, target, isBackendComplete
                     </div>
 
                     {/* Current Analysis Card */}
-                    <div className="flex-grow-1 p-4 rounded border d-flex flex-column justify-content-center align-items-center text-center" style={{ background: 'rgba(15, 23, 42, 0.6)', borderColor: 'rgba(255,255,255,0.05)', backdropFilter: 'blur(10px)' }}>
+                    <div className="flex-grow-1 p-4 rounded border d-flex flex-column justify-content-center align-items-center text-center" style={{ background: 'rgba(7, 11, 22, 0.7)', borderColor: 'rgba(56,189,248,0.06)', backdropFilter: 'blur(10px)' }}>
                         <AnimatePresence mode="wait">
                             <motion.div
                                 key={currentStepIndex}
@@ -207,8 +207,8 @@ export default function InvestigationProgress({ steps, target, isBackendComplete
                 <div className="col-12 col-lg-6 d-flex flex-column gap-4">
                     
                     {/* Live Log Panel */}
-                    <div className="p-3 rounded border position-relative flex-grow-1 tl-hide-scrollbar" style={{ background: '#020617', borderColor: 'rgba(255,255,255,0.05)', display: 'flex', flexDirection: 'column', minHeight: '350px' }}>
-                        <div className="d-flex align-items-center gap-2 mb-2 pb-2 border-bottom" style={{ borderColor: 'rgba(255,255,255,0.05)' }}>
+                    <div className="p-3 rounded border position-relative flex-grow-1 tl-hide-scrollbar" style={{ background: 'rgba(2, 4, 12, 0.8)', borderColor: 'rgba(56,189,248,0.06)', display: 'flex', flexDirection: 'column', minHeight: '350px' }}>
+                        <div className="d-flex align-items-center gap-2 mb-2 pb-2 border-bottom" style={{ borderColor: 'rgba(56,189,248,0.06)' }}>
                             <Terminal size={14} color="var(--tl-text-muted)" />
                             <span style={{ fontSize: '0.75rem', color: 'var(--tl-text-muted)', textTransform: 'uppercase', letterSpacing: '1px' }}>Live Investigation Log</span>
                         </div>

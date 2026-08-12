@@ -48,7 +48,7 @@ export default function DashboardLayout() {
     { name: 'Email Investigation', path: '/investigations/email', icon: Mail },
     { name: 'Phone Investigation', path: '/investigations/phone', icon: PhoneCall },
     { name: 'Reports', path: '/reports', icon: FileText },
-    { name: 'Analyst Workspace', path: '/history', icon: History },
+    { name: 'Findings', path: '/history', icon: History },
   ];
 
   const secondaryNav = [
@@ -92,12 +92,15 @@ export default function DashboardLayout() {
 
   return (
     <div className="tl-app">
-      {/* Animated Background */}
-      <div className="tl-animated-bg">
-        <div className="tl-orb tl-orb-1" />
-        <div className="tl-orb tl-orb-2" />
-        <div className="tl-orb tl-orb-3" />
-      </div>
+      {/* ═══ 5-Layer Animated Background ═══ */}
+      {/* Layer 1: Global map image with cinematic drift */}
+      <div className="tl-animated-bg" />
+      {/* Layer 3: Animated network lines + scanning grid */}
+      <div className="tl-bg-network" />
+      {/* Layer 4: Threat indicator pulses + radar */}
+      <div className="tl-bg-particles" />
+      {/* Layer 4b: Ambient nodes + light sweep */}
+      <div className="tl-bg-nodes" />
 
       {/* Mobile Overlay */}
       {mobileOpen && <div className="tl-sidebar-overlay" style={{ display: 'block' }} onClick={() => setMobileOpen(false)} />}
@@ -174,18 +177,16 @@ export default function DashboardLayout() {
               <Menu size={20} />
             </button>
             <div className="tl-breadcrumb d-none d-md-flex">
-              <span className="tl-breadcrumb-item">ThreatLens</span>
+              <LayoutDashboard size={14} className="tl-breadcrumb-item" />
               <ChevronRight size={14} className="tl-breadcrumb-separator" />
               <span className="tl-breadcrumb-item active">{pageTitle}</span>
             </div>
           </div>
 
           <div className="d-flex align-items-center gap-2">
-            {/* Search removed by request */}
-
             <NotificationCenter />
 
-            <div style={{ width: 1, height: 24, background: 'var(--tl-border)', margin: '0 0.25rem' }} />
+            <div style={{ width: 1, height: 24, background: 'rgba(56,189,248,0.08)', margin: '0 0.25rem' }} />
 
             <Link to="/profile" className="d-flex align-items-center gap-2 text-decoration-none" style={{ padding: '0.375rem' }}>
               <div className="tl-avatar" style={{ overflow: 'hidden' }}>

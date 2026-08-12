@@ -8,6 +8,7 @@ import ProtectedRoute from './components/ProtectedRoute';
 import { motion } from 'framer-motion';
 import { Shield, ArrowRight, Zap, Lock, Globe, Search, BarChart3, Brain } from 'lucide-react';
 
+const Home = React.lazy(() => import('./pages/Home'));
 const Login = React.lazy(() => import('./pages/Login'));
 const Register = React.lazy(() => import('./pages/Register'));
 const ForgotPassword = React.lazy(() => import('./pages/ForgotPassword'));
@@ -28,75 +29,7 @@ const IocRepository = React.lazy(() => import('./pages/IocRepository'));
 const IocDetail = React.lazy(() => import('./pages/IocDetail'));
 const SettingsPage = React.lazy(() => import('./pages/SettingsPage'));
 
-/* ——————————————— Premium Landing Page ——————————————— */
-const Home = () => (
-  <div className="tl-hero">
-    <motion.div initial={{ opacity: 0, y: 20 }} animate={{ opacity: 1, y: 0 }} transition={{ duration: 0.6, delay: 0.1 }}>
-      <div className="tl-hero-badge">
-        <Zap size={14} />
-        AI-Powered Threat Intelligence Platform
-      </div>
-    </motion.div>
 
-    <motion.h1 className="tl-hero-title" initial={{ opacity: 0, y: 20 }} animate={{ opacity: 1, y: 0 }} transition={{ duration: 0.6, delay: 0.2 }}>
-      Detect. Analyze.<br />
-      <span className="gradient-text">Neutralize Threats.</span>
-    </motion.h1>
-
-    <motion.p className="tl-hero-subtitle" initial={{ opacity: 0, y: 20 }} animate={{ opacity: 1, y: 0 }} transition={{ duration: 0.6, delay: 0.3 }}>
-      ThreatLens AI combines advanced artificial intelligence with comprehensive 
-      cyber threat intelligence to protect your digital assets in real-time.
-    </motion.p>
-
-    <motion.div className="tl-hero-actions" initial={{ opacity: 0, y: 20 }} animate={{ opacity: 1, y: 0 }} transition={{ duration: 0.6, delay: 0.4 }}>
-      <Link to="/register" className="tl-btn tl-btn-primary tl-btn-lg">
-        Start Free Trial <ArrowRight size={18} />
-      </Link>
-      <Link to="/login" className="tl-btn tl-btn-secondary tl-btn-lg">
-        Sign In
-      </Link>
-    </motion.div>
-
-    <motion.div className="tl-hero-stats" initial={{ opacity: 0 }} animate={{ opacity: 1 }} transition={{ duration: 0.6, delay: 0.6 }}>
-      <div className="tl-hero-stat">
-        <div className="tl-hero-stat-value">99.9%</div>
-        <div className="tl-hero-stat-label">Detection Rate</div>
-      </div>
-      <div className="tl-hero-stat">
-        <div className="tl-hero-stat-value">&lt;2s</div>
-        <div className="tl-hero-stat-label">Avg Analysis Time</div>
-      </div>
-      <div className="tl-hero-stat">
-        <div className="tl-hero-stat-value">50M+</div>
-        <div className="tl-hero-stat-label">Threats Analyzed</div>
-      </div>
-    </motion.div>
-
-    {/* Feature Cards */}
-    <motion.div 
-      className="row g-4 mt-5 w-100" style={{ maxWidth: '900px' }}
-      initial={{ opacity: 0, y: 30 }} animate={{ opacity: 1, y: 0 }} transition={{ duration: 0.6, delay: 0.8 }}
-    >
-      {[
-        { icon: <Search size={24} />, title: 'URL Investigation', desc: 'Deep scan any URL for malware, phishing, and threats.' },
-        { icon: <Brain size={24} />, title: 'AI Analysis', desc: 'Multi-model AI reasoning for comprehensive threat assessment.' },
-        { icon: <Globe size={24} />, title: 'Real-time Intel', desc: 'Live threat feeds from global intelligence sources.' },
-      ].map((f, i) => (
-        <div key={i} className="col-md-4">
-          <div className="tl-card tl-card-glow p-4 text-center h-100">
-            <div className="tl-stat-icon mx-auto mb-3" style={{ background: 'rgba(var(--tl-primary-rgb), 0.1)', color: 'var(--tl-primary-light)' }}>
-              {f.icon}
-            </div>
-            <h5 style={{ fontWeight: 600, color: 'var(--tl-text-primary)', marginBottom: '0.5rem' }}>{f.title}</h5>
-            <p style={{ fontSize: '0.875rem', color: 'var(--tl-text-muted)', marginBottom: 0 }}>{f.desc}</p>
-          </div>
-        </div>
-      ))}
-    </motion.div>
-  </div>
-);
-
-/* ——————————————— Placeholder Pages ——————————————— */
 const PlaceholderPage = ({ title, description }) => (
   <div>
     <div className="tl-page-header">

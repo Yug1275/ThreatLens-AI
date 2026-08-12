@@ -22,9 +22,9 @@ const CustomTooltip = ({ active, payload, label }) => {
   if (!active || !payload) return null;
   return (
     <div style={{
-      background: 'var(--tl-bg-surface)', border: '1px solid var(--tl-border)',
-      borderRadius: 'var(--tl-radius-sm)', padding: '0.75rem', boxShadow: 'var(--tl-shadow-lg)',
-      zIndex: 100
+      background: 'rgba(10, 15, 28, 0.9)', border: '1px solid rgba(56,189,248,0.1)',
+      borderRadius: 'var(--tl-radius-md)', padding: '0.75rem', boxShadow: 'var(--tl-shadow-lg)',
+      zIndex: 100, backdropFilter: 'blur(8px)'
     }}>
       <div style={{ fontWeight: 600, color: 'var(--tl-text-primary)', marginBottom: '0.25rem', fontSize: '0.8125rem' }}>{label}</div>
       {payload.map((entry, i) => (
@@ -56,12 +56,12 @@ function scoreToStatus(score) {
   return 'SAFE';
 }
 
-const RISK_COLORS = { Malicious: '#EF4444', Suspicious: '#F59E0B', Safe: '#10B981' };
-const TYPE_COLORS = { URL: '#3B82F6', EMAIL: '#10B981', PHONE: '#8B5CF6', OCR: '#06B6D4', QR: '#F59E0B' };
+const RISK_COLORS = { Malicious: '#EF4444', Suspicious: '#F59E0B', Safe: '#22C55E' };
+const TYPE_COLORS = { URL: '#38BDF8', EMAIL: '#22C55E', PHONE: '#A78BFA', OCR: '#22D3EE', QR: '#F59E0B' };
 
 const statusBadge = (status) => {
   const map = { MALICIOUS: 'danger', SAFE: 'success', PENDING: 'warning', SUSPICIOUS: 'warning' };
-  return <span className={`tl-badge tl-badge-${map[status] || 'primary'}`}>{status}</span>;
+  return <span className={`tl-badge tl-badge-${map[status] || 'primary'}`} style={{ borderRadius: '4px' }}>{status}</span>;
 };
 
 const fadeUp = (delay = 0) => ({
@@ -115,33 +115,24 @@ export default function Dashboard() {
   }, []);
 
   const statCards = React.useMemo(() => [
-    { title: 'Total Investigations', value: stats?.total ?? 0, icon: Search, trend: 'All time', up: true, color: '--tl-primary-rgb' },
-    { title: 'Malicious Threats', value: stats?.malicious ?? 0, icon: ShieldAlert, trend: 'Score > 75', up: false, color: '--tl-danger-rgb' },
-    { title: 'Safe Entities', value: stats?.safe ?? 0, icon: Activity, trend: 'Score ≤ 40', up: true, color: '--tl-success-rgb' },
-    { title: 'Suspicious', value: stats?.suspicious ?? 0, icon: AlertTriangle, trend: 'Score 41–75', up: true, color: '--tl-warning-rgb' },
-    { title: 'Average Score', value: stats?.average_score?.toFixed(1) ?? '0.0', icon: TrendingUp, trend: 'Overall', up: true, color: '--tl-info-rgb' },
+    { title: 'Total Investigations', value: stats?.total ?? 0, icon: Search, trend: 'All time', up: true, color: '--tl-electric-rgb', accent: '#38BDF8' },
+    { title: 'Malicious Threats', value: stats?.malicious ?? 0, icon: ShieldAlert, trend: 'Score > 75', up: false, color: '--tl-danger-rgb', accent: '#EF4444' },
+    { title: 'Safe Entities', value: stats?.safe ?? 0, icon: Activity, trend: 'Score ≤ 40', up: true, color: '--tl-success-rgb', accent: '#22C55E' },
+    { title: 'Suspicious', value: stats?.suspicious ?? 0, icon: AlertTriangle, trend: 'Score 41–75', up: true, color: '--tl-warning-rgb', accent: '#EAB308' },
+    { title: 'Average Score', value: stats?.average_score?.toFixed(1) ?? '0.0', icon: TrendingUp, trend: 'Overall', up: true, color: '--tl-primary-rgb', accent: '#F97316' },
   ], [stats]);
 
   return (
     <div>
-      {/* Welcome */}
-      <motion.div {...fadeUp(0)}>
-        <div className="tl-welcome-card">
-          <div className="row align-items-center">
-            <div className="col-lg-8">
-              <h2 style={{ fontWeight: 700, color: 'var(--tl-text-primary)', marginBottom: '0.5rem', fontSize: '1.5rem' }}>
-                Welcome back, {user?.username || 'Analyst'} 👋
-              </h2>
-              <p style={{ color: 'var(--tl-text-muted)', marginBottom: '1.25rem', maxWidth: '500px' }}>
-                Here's what's happening with your security posture today. Stay ahead of emerging threats.
-              </p>
-              <button className="tl-btn tl-btn-primary" onClick={() => navigate('/investigations/url')}>
-                <Search size={16} /> New Investigation
-              </button>
-            </div>
-          </div>
+      <div className="d-flex justify-content-between align-items-center mb-4">
+        <div>
+          <h4 style={{ fontWeight: 700, color: 'var(--tl-text-primary)', margin: 0 }}>Threat Intelligence Dashboard</h4>
+          <p style={{ color: 'var(--tl-text-muted)', fontSize: '0.8125rem', margin: '0.25rem 0 0 0' }}>Global cyber threat monitoring • {user?.username || 'Analyst'}</p>
         </div>
-      </motion.div>
+        <button className="tl-btn tl-btn-primary" onClick={() => navigate('/investigations/url')}>
+          <Crosshair size={16} /> New Investigation
+        </button>
+      </div>
 
       {/* Stat Cards */}
       <div className="d-flex flex-wrap gap-4 mb-4">
@@ -155,9 +146,9 @@ export default function Dashboard() {
                 ) : (
                   <div className="tl-stat-card">
                     <div className="d-flex justify-content-between align-items-start mb-3">
-                      <span style={{ color: 'var(--tl-text-muted)', fontSize: '0.8125rem', fontWeight: 500 }}>{s.title}</span>
-                      <div className="tl-stat-icon" style={{ background: `rgba(var(${s.color}), 0.1)`, color: `rgb(var(${s.color}))` }}>
-                        <Icon size={20} />
+                      <span style={{ color: 'var(--tl-text-muted)', fontSize: '0.8125rem', fontWeight: 500, letterSpacing: '0.02em' }}>{s.title}</span>
+                      <div className="tl-stat-icon" style={{ width: 36, height: 36, background: `rgba(var(${s.color}), 0.1)`, color: s.accent, borderRadius: 'var(--tl-radius-sm)' }}>
+                        <Icon size={18} />
                       </div>
                     </div>
                     <div style={{ fontSize: '2rem', fontWeight: 700, color: 'var(--tl-text-primary)', lineHeight: 1.2, marginBottom: '0.5rem' }}>
@@ -166,9 +157,8 @@ export default function Dashboard() {
                     <div className="d-flex align-items-center gap-1" style={{ fontSize: '0.75rem' }}>
                       <span style={{ color: s.up ? 'var(--tl-success)' : 'var(--tl-danger)', display: 'flex', alignItems: 'center', gap: 2 }}>
                         {s.up ? <ArrowUpRight size={14} /> : <ArrowDownRight size={14} />}
-                        {s.trend}
                       </span>
-                      <span style={{ color: 'var(--tl-text-faint)' }}>vs last week</span>
+                      <span style={{ color: 'var(--tl-text-faint)' }}>{s.trend}</span>
                     </div>
                   </div>
                 )}
@@ -197,19 +187,19 @@ export default function Dashboard() {
                     <AreaChart data={activityData} margin={{ top: 5, right: 5, left: -20, bottom: 0 }}>
                       <defs>
                         <linearGradient id="gSafe" x1="0" y1="0" x2="0" y2="1">
-                          <stop offset="5%" stopColor="#10B981" stopOpacity={0.25} />
-                          <stop offset="95%" stopColor="#10B981" stopOpacity={0} />
+                          <stop offset="5%" stopColor="#22D3EE" stopOpacity={0.3} />
+                          <stop offset="95%" stopColor="#22D3EE" stopOpacity={0} />
                         </linearGradient>
                         <linearGradient id="gMal" x1="0" y1="0" x2="0" y2="1">
-                          <stop offset="5%" stopColor="#EF4444" stopOpacity={0.25} />
+                          <stop offset="5%" stopColor="#EF4444" stopOpacity={0.3} />
                           <stop offset="95%" stopColor="#EF4444" stopOpacity={0} />
                         </linearGradient>
                       </defs>
-                      <CartesianGrid strokeDasharray="3 3" stroke="rgba(148,163,184,0.08)" vertical={false} />
+                      <CartesianGrid strokeDasharray="3 3" stroke="rgba(56,189,248,0.05)" vertical={false} />
                       <XAxis dataKey="name" stroke="var(--tl-text-faint)" axisLine={false} tickLine={false} dy={10} fontSize={12} />
                       <YAxis stroke="var(--tl-text-faint)" axisLine={false} tickLine={false} fontSize={12} />
                       <RechartsTooltip content={<CustomTooltip />} />
-                      <Area type="monotone" dataKey="safe" stroke="#10B981" strokeWidth={2} fill="url(#gSafe)" name="Safe" />
+                      <Area type="monotone" dataKey="safe" stroke="#22D3EE" strokeWidth={2} fill="url(#gSafe)" name="Safe" />
                       <Area type="monotone" dataKey="malicious" stroke="#EF4444" strokeWidth={2} fill="url(#gMal)" name="Malicious" />
                     </AreaChart>
                   </ResponsiveContainer>
@@ -288,11 +278,11 @@ export default function Dashboard() {
                 ) : (
                   <ResponsiveContainer width="100%" height="100%">
                     <BarChart data={productivityData && productivityData.length > 0 ? productivityData : Array.from({length: 30}).map((_, i) => ({ date: i, count: 0 }))} margin={{ top: 5, right: 5, left: -20, bottom: 0 }}>
-                      <CartesianGrid strokeDasharray="3 3" stroke="rgba(148,163,184,0.08)" vertical={false} />
+                      <CartesianGrid strokeDasharray="3 3" stroke="rgba(56,189,248,0.05)" vertical={false} />
                       <XAxis dataKey="date" stroke="var(--tl-text-faint)" axisLine={false} tickLine={false} dy={10} fontSize={10} interval="preserveStartEnd" minTickGap={20} />
                       <YAxis stroke="var(--tl-text-faint)" axisLine={false} tickLine={false} fontSize={12} allowDecimals={false} domain={[0, dataMax => (dataMax === 0 ? 5 : dataMax)]} />
-                      <RechartsTooltip content={<CustomTooltip />} cursor={{ fill: 'rgba(255,255,255,0.05)' }} />
-                      <Bar dataKey="count" name="Investigations" fill="var(--tl-primary-light)" radius={[4, 4, 0, 0]} />
+                      <RechartsTooltip content={<CustomTooltip />} cursor={{ fill: 'rgba(56,189,248,0.04)' }} />
+                      <Bar dataKey="count" name="Investigations" fill="#38BDF8" radius={[4, 4, 0, 0]} />
                     </BarChart>
                   </ResponsiveContainer>
                 )}

@@ -24,15 +24,15 @@ const TYPE_ICONS = {
 };
 
 const TYPE_COLORS = {
-  URL:   '--tl-primary-light',
-  OCR:   '--tl-info',
+  URL:   '--tl-cyan',
+  OCR:   '--tl-electric',
   QR:    '--tl-warning',
   EMAIL: '--tl-success',
-  PHONE: '--tl-accent',
+  PHONE: '--tl-primary-light',
 };
 
 const WORKFLOW_STATUS_COLORS = {
-  NEW: 'var(--tl-info)',
+  NEW: 'var(--tl-electric)',
   IN_PROGRESS: 'var(--tl-warning)',
   RESOLVED: 'var(--tl-success)',
   CLOSED: 'var(--tl-text-muted)'
@@ -419,7 +419,7 @@ export default function AnalystWorkspace() {
   return (
     <div className="pb-5">
       <PageHeader
-        title="Analyst Workspace"
+        title="Findings"
         subtitle="Organize, filter, and manage all your past threat investigations."
       />
 
@@ -688,166 +688,56 @@ export default function AnalystWorkspace() {
                 </Button>
               </div>
             ) : (
-              <div style={{ overflowX: 'auto' }}>
-                <table className="tl-table">
-                  <thead>
-                    <tr>
-                      <th style={{ width: 40, textAlign: 'center' }}>
-                        <button className="tl-btn-ghost p-1" onClick={toggleAll} style={{ background: 'none', border: 'none', color: 'var(--tl-text-muted)' }}>
-                          {selectedIds.size === items.length && items.length > 0 ? <CheckSquare size={16} /> : <Square size={16} />}
-                        </button>
-                      </th>
-                      <th style={{ width: 40, textAlign: 'center' }}></th>
-                      <th style={{ cursor: 'pointer', userSelect: 'none' }} onClick={() => handleSort('type')}>
-                        Type {sortBy === 'type' && (sortOrder === 'asc' ? '↑' : '↓')}
-                      </th>
-                      <th style={{ cursor: 'pointer', userSelect: 'none' }} onClick={() => handleSort('target')}>
-                        Target {sortBy === 'target' && (sortOrder === 'asc' ? '↑' : '↓')}
-                      </th>
-                      <th>Workflow</th>
-                      <th style={{ cursor: 'pointer', userSelect: 'none' }} onClick={() => handleSort('threat_score')}>
-                        Score {sortBy === 'threat_score' && (sortOrder === 'asc' ? '↑' : '↓')}
-                      </th>
-                      <th style={{ cursor: 'pointer', userSelect: 'none' }} onClick={() => handleSort('created_at')}>
-                        Date {sortBy === 'created_at' && (sortOrder === 'asc' ? '↑' : '↓')}
-                      </th>
-                      <th style={{ textAlign: 'right' }}>Actions</th>
-                    </tr>
-                  </thead>
-                  <tbody>
-                    <AnimatePresence initial={false}>
-                      {items.map((inv, i) => (
-                        <motion.tr
-                          key={inv.id}
-                          initial={{ opacity: 0, y: 8 }}
-                          animate={{ opacity: 1, y: 0 }}
-                          exit={{ opacity: 0, x: -20 }}
-                          transition={{ delay: i * 0.03 }}
-                          style={{ background: selectedIds.has(inv.id) ? 'rgba(var(--tl-primary-rgb), 0.05)' : undefined }}
-                        >
-                          {/* Checkbox */}
-                          <td style={{ textAlign: 'center' }}>
-                            <button className="tl-btn-ghost p-1" onClick={() => toggleSelection(inv.id)} style={{ background: 'none', border: 'none', color: selectedIds.has(inv.id) ? 'var(--tl-primary)' : 'var(--tl-text-muted)' }}>
-                              {selectedIds.has(inv.id) ? <CheckSquare size={16} /> : <Square size={16} />}
-                            </button>
-                          </td>
-                          
-                          {/* Favorite */}
-                          <td style={{ textAlign: 'center' }}>
-                            <button className="tl-btn-ghost p-1" onClick={() => toggleFavorite(inv)} style={{ background: 'none', border: 'none', cursor: 'pointer' }}>
-                              <Star size={16} color={inv.is_favorite ? 'var(--tl-warning)' : 'var(--tl-border)'} fill={inv.is_favorite ? 'var(--tl-warning)' : 'none'} />
-                            </button>
-                          </td>
-
-                          {/* Type */}
-                          <td>
-                            <span style={{
-                              display: 'inline-flex', alignItems: 'center', gap: 6,
-                              padding: '3px 10px', borderRadius: 6,
-                              background: 'rgba(var(--tl-primary-rgb),0.08)',
-                              color: `var(${TYPE_COLORS[inv.type] || '--tl-primary-light'})`,
-                              fontSize: '0.75rem', fontWeight: 600,
-                            }}>
-                              {TYPE_ICONS[inv.type] || null}
-                              {inv.type}
-                            </span>
-                          </td>
-
-                          {/* Target */}
-                          <td style={{ maxWidth: 240 }}>
-                            {inv.name ? (
-                              <div style={{ color: 'var(--tl-text-primary)', fontWeight: 600, fontSize: '0.875rem' }}>{inv.name}</div>
-                            ) : null}
-                            <span style={{
-                              color: inv.name ? 'var(--tl-text-secondary)' : 'var(--tl-text-primary)', 
-                              fontWeight: inv.name ? 400 : 500, fontSize: '0.875rem',
-                              display: 'block', overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap',
-                            }} title={inv.target}>
-                              {inv.target}
-                            </span>
-                            
-                            <div className="d-flex flex-wrap gap-2 mt-1 align-items-center">
-                              {inv.is_archived && <span style={{ fontSize: '0.65rem', background: 'var(--tl-border)', padding: '2px 6px', borderRadius: 4, color: 'var(--tl-text-muted)' }}>ARCHIVED</span>}
-                              {inv.folder_id && <span style={{ fontSize: '0.65rem', background: 'rgba(var(--tl-primary-rgb),0.1)', color: 'var(--tl-primary)', padding: '2px 6px', borderRadius: 4, display: 'flex', alignItems: 'center', gap: 4 }}><Folder size={10} /> {folders.find(f => f.id === inv.folder_id)?.name || 'Folder'}</span>}
-                              {inv.tags && inv.tags.map(t => (
-                                <span key={t} style={{ fontSize: '0.65rem', background: 'rgba(var(--tl-info-rgb),0.1)', color: 'var(--tl-info)', padding: '2px 6px', borderRadius: 4 }}>
-                                  {t}
-                                </span>
-                              ))}
-                              {inv.notes && (
-                                <span style={{ fontSize: '0.65rem', color: 'var(--tl-text-muted)', cursor: 'pointer', display: 'flex', alignItems: 'center', gap: 4 }} onClick={() => setEditTarget({ id: inv.id, name: inv.name || '', notes: inv.notes || '' })}>
-                                  <Edit3 size={10}/> Notes
-                                </span>
-                              )}
-                            </div>
-                          </td>
-
-                          {/* Workflow */}
-                          <td>
-                            <div className="d-flex flex-column gap-1">
-                               <span style={{
-                                fontSize: '0.75rem', fontWeight: 600, color: WORKFLOW_STATUS_COLORS[inv.workflow_status || 'NEW'] || 'var(--tl-text-primary)',
-                                display: 'flex', alignItems: 'center', gap: 4
-                              }}>
-                                <Circle size={10} fill={WORKFLOW_STATUS_COLORS[inv.workflow_status || 'NEW']} stroke="none" />
-                                {(inv.workflow_status || 'NEW').replace('_', ' ')}
-                              </span>
-                              {inv.status !== 'COMPLETED' && (
-                                <span style={{ fontSize: '0.65rem', color: inv.status === 'FAILED' ? 'var(--tl-danger)' : 'var(--tl-warning)' }}>
-                                  {inv.status}
-                                </span>
-                              )}
-                            </div>
-                          </td>
-
-                          {/* Score */}
-                          <td>
-                            <span style={{
-                              fontWeight: 700, fontSize: '0.9375rem',
-                              color: inv.threat_score > 75 ? 'var(--tl-danger)' : inv.threat_score > 40 ? 'var(--tl-warning)' : 'var(--tl-success)',
-                            }}>
-                              {inv.threat_score ?? '—'}
-                            </span>
-                            {inv.threat_score != null && <span style={{ color: 'var(--tl-text-faint)', fontSize: '0.6875rem' }}>/100</span>}
-                          </td>
-
-                          {/* Date */}
-                          <td>
-                            <span style={{ color: 'var(--tl-text-muted)', fontSize: '0.8125rem', display: 'flex', alignItems: 'center', gap: 5 }}>
-                              <Clock size={12} style={{ opacity: 0.5 }} />
-                              {formatDate(inv.created_at)}
-                            </span>
-                          </td>
-
-                          {/* Actions */}
-                          <td style={{ textAlign: 'right', whiteSpace: 'nowrap' }}>
-                            <div className="d-flex justify-content-end align-items-center gap-1">
-                              <button
-                                className="tl-btn tl-btn-ghost tl-btn-sm px-2"
-                                onClick={() => navigate(`/investigations/detail/${inv.id}`)}
-                                title="View report"
-                              >
-                                <ExternalLink size={14} />
+              <div style={{ display: 'flex', gap: '1rem', overflowX: 'auto', paddingBottom: '1rem', minHeight: '600px' }}>
+                {[
+                  { id: 'NEW', label: 'Open' },
+                  // { id: 'IN_PROGRESS', label: 'In Progress' },
+                  // { id: 'RESOLVED', label: 'Resolved' },
+                  // { id: 'CLOSED', label: 'Canceled' }
+                ].map(col => {
+                  const colItems = items.filter(i => (i.workflow_status || 'NEW') === col.id);
+                  return (
+                    <div key={col.id} style={{ flex: '1 1 300px', minWidth: '300px', background: 'var(--tl-bg-base)', borderRadius: 'var(--tl-radius-md)', padding: '1rem', display: 'flex', flexDirection: 'column', gap: '0.75rem' }}>
+                      <div className="d-flex justify-content-between align-items-center mb-2">
+                        <h6 style={{ margin: 0, fontWeight: 600, color: 'var(--tl-text-primary)' }}>{col.label} <span style={{ color: 'var(--tl-text-faint)', fontSize: '0.8125rem', marginLeft: '0.5rem' }}>{colItems.length}</span></h6>
+                      </div>
+                      
+                      {colItems.map(inv => (
+                        <div key={inv.id} className="tl-card p-3" style={{ cursor: 'pointer', borderLeft: `3px solid ${WORKFLOW_STATUS_COLORS[inv.workflow_status || 'NEW']}` }} onClick={() => navigate(`/investigations/detail/${inv.id}`)}>
+                          <div className="d-flex justify-content-between align-items-start mb-2">
+                            <span style={{ fontSize: '0.75rem', color: 'var(--tl-text-muted)', fontFamily: 'var(--tl-font-mono)' }}>{inv.id.slice(0, 8)}</span>
+                            <div className="d-flex align-items-center gap-1">
+                               <button className="tl-btn-ghost p-1" onClick={(e) => { e.stopPropagation(); toggleSelection(inv.id); }} style={{ background: 'none', border: 'none', color: selectedIds.has(inv.id) ? 'var(--tl-primary)' : 'var(--tl-text-muted)' }}>
+                                {selectedIds.has(inv.id) ? <CheckSquare size={14} /> : <Square size={14} />}
                               </button>
-                              
                               <RowMenu 
                                 inv={inv}
-                                onRename={(inv) => setEditTarget({ id: inv.id, name: inv.name || '', notes: inv.notes || '' })}
+                                onRename={(i) => { setEditTarget({ id: i.id, name: i.name || '', notes: i.notes || '' }) }}
                                 onArchive={handleArchive}
-                                onDelete={(inv) => setDeleteTarget({ id: inv.id, target: inv.name || inv.target })}
+                                onDelete={(i) => setDeleteTarget({ id: i.id, target: i.name || i.target })}
                                 onRerun={handleRerun}
-                                onUpdateStatus={(inv) => {
-                                  setSelectedIds(new Set([inv.id]));
-                                  setBulkActionType('update_status');
-                                }}
+                                onUpdateStatus={(i) => { setSelectedIds(new Set([i.id])); setBulkActionType('update_status'); }}
                               />
                             </div>
-                          </td>
-                        </motion.tr>
+                          </div>
+                          <div style={{ fontWeight: 600, color: 'var(--tl-text-primary)', marginBottom: '0.25rem' }}>{inv.name || inv.target}</div>
+                          <div className="d-flex align-items-center gap-2 mb-3">
+                            <span className="tl-badge" style={{ background: 'rgba(var(--tl-primary-rgb),0.1)', color: 'var(--tl-primary)', fontSize: '0.6875rem' }}>{inv.type}</span>
+                            <span style={{ fontSize: '0.75rem', fontWeight: 700, color: inv.threat_score > 75 ? 'var(--tl-danger)' : inv.threat_score > 40 ? 'var(--tl-warning)' : 'var(--tl-success)' }}>
+                              Score: {inv.threat_score ?? 'N/A'}
+                            </span>
+                          </div>
+                          <div className="d-flex justify-content-between align-items-center" style={{ borderTop: '1px solid var(--tl-border)', paddingTop: '0.75rem', marginTop: '0.5rem' }}>
+                            <span style={{ fontSize: '0.6875rem', color: 'var(--tl-text-muted)', display: 'flex', alignItems: 'center', gap: 4 }}>
+                              <Clock size={12} /> {formatDate(inv.created_at)}
+                            </span>
+                            <div className="tl-avatar" style={{ width: 20, height: 20, fontSize: '0.5rem' }}>A</div>
+                          </div>
+                        </div>
                       ))}
-                    </AnimatePresence>
-                  </tbody>
-                </table>
+                    </div>
+                  );
+                })}
               </div>
             )}
 
