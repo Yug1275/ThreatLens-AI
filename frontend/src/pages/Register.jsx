@@ -67,7 +67,7 @@ const Register = () => {
       >
         <div className="tl-auth-card tl-auth-card-wide">
           <div className="tl-auth-logo">
-            <img src="/logo.png" alt="ThreatLens AI" style={{ width: 22, height: 22, objectFit: 'contain' }} />
+            <img src="/logo.png" alt="ThreatLens AI" style={{ width: '100%', height: '100%', objectFit: 'contain' }} />
           </div>
           <h2 className="tl-auth-title">Create your account</h2>
           <p className="tl-auth-subtitle">Join ThreatLens AI and start protecting your assets</p>

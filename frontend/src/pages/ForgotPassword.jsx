@@ -49,7 +49,7 @@ const ForgotPassword = () => {
         {phase === 'request' ? (
           <motion.div key="request" initial={{ opacity: 0, y: 24 }} animate={{ opacity: 1, y: 0 }} exit={{ opacity: 0, y: -24 }} transition={{ duration: 0.3 }}>
             <div className="tl-auth-card">
-              <div className="tl-auth-logo"><img src="/logo.png" alt="ThreatLens AI" style={{ width: 22, height: 22, objectFit: 'contain' }} /></div>
+              <div className="tl-auth-logo"><img src="/logo.png" alt="ThreatLens AI" style={{ width: '100%', height: '100%', objectFit: 'contain' }} /></div>
               <h2 className="tl-auth-title">Forgot password</h2>
               <p className="tl-auth-subtitle">Enter your email to receive a verification code</p>
 

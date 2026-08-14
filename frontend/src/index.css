@@ -922,14 +922,12 @@ a:hover { color: var(--tl-primary); }
 .tl-auth-card-wide { max-width: 520px; }
 
 .tl-auth-logo {
-  width: 48px; height: 48px;
+  width: 56px; height: 56px;
   border-radius: var(--tl-radius-md);
-  background: var(--tl-gradient-primary);
   display: flex;
   align-items: center;
   justify-content: center;
   margin: 0 auto 1.5rem;
-  box-shadow: 0 4px 20px rgba(var(--tl-primary-rgb), 0.35);
 }
 
 .tl-auth-title {
