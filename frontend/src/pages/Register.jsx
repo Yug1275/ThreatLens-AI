@@ -2,7 +2,7 @@ import React, { useState, useContext } from 'react';
 import { Link, useNavigate } from 'react-router-dom';
 import { AuthContext } from '../context/AuthContext';
 import { motion } from 'framer-motion';
-import { Shield, Eye, EyeOff, ArrowRight, Loader2 } from 'lucide-react';
+import { Eye, EyeOff, ArrowRight, Loader2 } from 'lucide-react';
 
 const Register = () => {
   const [formData, setFormData] = useState({
@@ -67,7 +67,7 @@ const Register = () => {
       >
         <div className="tl-auth-card tl-auth-card-wide">
           <div className="tl-auth-logo">
-            <Shield size={22} color="#fff" />
+            <img src="/logo.png" alt="ThreatLens AI" style={{ width: 22, height: 22, objectFit: 'contain' }} />
           </div>
           <h2 className="tl-auth-title">Create your account</h2>
           <p className="tl-auth-subtitle">Join ThreatLens AI and start protecting your assets</p>

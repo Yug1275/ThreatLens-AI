@@ -2,7 +2,7 @@ import React, { useState } from 'react';
 import { Link, useNavigate, useSearchParams } from 'react-router-dom';
 import api from '../utils/axios';
 import { motion } from 'framer-motion';
-import { Shield, Eye, EyeOff, ArrowRight, Loader2 } from 'lucide-react';
+import { Eye, EyeOff, ArrowRight, Loader2 } from 'lucide-react';
 
 const ResetPassword = () => {
   const [password, setPassword] = useState('');
@@ -37,7 +37,7 @@ const ResetPassword = () => {
     <div className="tl-auth-container">
       <motion.div initial={{ opacity: 0, y: 24 }} animate={{ opacity: 1, y: 0 }} transition={{ duration: 0.5 }}>
         <div className="tl-auth-card">
-          <div className="tl-auth-logo"><Shield size={22} color="#fff" /></div>
+          <div className="tl-auth-logo"><img src="/logo.png" alt="ThreatLens AI" style={{ width: 22, height: 22, objectFit: 'contain' }} /></div>
           <h2 className="tl-auth-title">Reset password</h2>
           <p className="tl-auth-subtitle">Enter your new secure password</p>
 

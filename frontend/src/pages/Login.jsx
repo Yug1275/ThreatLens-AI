@@ -2,7 +2,7 @@ import React, { useState, useContext } from 'react';
 import { Link, useNavigate, useLocation } from 'react-router-dom';
 import { AuthContext } from '../context/AuthContext';
 import { motion } from 'framer-motion';
-import { Shield, Eye, EyeOff, ArrowRight, Loader2 } from 'lucide-react';
+import { Eye, EyeOff, ArrowRight, Loader2 } from 'lucide-react';
 
 const Login = () => {
   const [email, setEmail] = useState('');
@@ -40,7 +40,7 @@ const Login = () => {
         <div className="tl-auth-card">
           {/* Logo */}
           <div className="tl-auth-logo">
-            <Shield size={22} color="#fff" />
+            <img src="/logo.png" alt="ThreatLens AI" style={{ width: 22, height: 22, objectFit: 'contain' }} />
           </div>
 
           <h2 className="tl-auth-title">Welcome back</h2>

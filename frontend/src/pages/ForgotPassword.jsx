@@ -2,7 +2,7 @@ import React, { useState } from 'react';
 import { Link, useNavigate } from 'react-router-dom';
 import api from '../utils/axios';
 import { motion, AnimatePresence } from 'framer-motion';
-import { Shield, ArrowRight, Loader2, KeyRound } from 'lucide-react';
+import { ArrowRight, Loader2, KeyRound } from 'lucide-react';
 
 const ForgotPassword = () => {
   const [phase, setPhase] = useState('request'); // 'request' or 'reset'
@@ -49,7 +49,7 @@ const ForgotPassword = () => {
         {phase === 'request' ? (
           <motion.div key="request" initial={{ opacity: 0, y: 24 }} animate={{ opacity: 1, y: 0 }} exit={{ opacity: 0, y: -24 }} transition={{ duration: 0.3 }}>
             <div className="tl-auth-card">
-              <div className="tl-auth-logo"><Shield size={22} color="#fff" /></div>
+              <div className="tl-auth-logo"><img src="/logo.png" alt="ThreatLens AI" style={{ width: 22, height: 22, objectFit: 'contain' }} /></div>
               <h2 className="tl-auth-title">Forgot password</h2>
               <p className="tl-auth-subtitle">Enter your email to receive a verification code</p>
 
