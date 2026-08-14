@@ -411,9 +411,12 @@ export default function Home() {
         <div className="container">
           <div className="row g-4 mb-5">
             <div className="col-12 col-lg-4 mb-4 mb-lg-0">
-              <span style={{ fontWeight: 800, fontSize: '1.2rem', color: 'white', letterSpacing: '-0.02em', display: 'block', marginBottom: '1rem' }}>
-                Threat<span className="text-gradient">Lens</span> AI
-              </span>
+              <div className="d-flex align-items-center gap-2 mb-3">
+                <img src="/logo.png" alt="ThreatLens AI" style={{ width: 24, height: 24, objectFit: 'contain' }} />
+                <span style={{ fontWeight: 800, fontSize: '1.2rem', color: 'white', letterSpacing: '-0.02em', display: 'block' }}>
+                  Threat<span className="text-gradient">Lens</span> AI
+                </span>
+              </div>
               <p style={{ color: 'var(--tl-text-muted)', fontSize: '0.875rem', maxWidth: '300px' }}>
                 Enterprise-grade, AI-powered Cyber Threat Intelligence Platform.
               </p>

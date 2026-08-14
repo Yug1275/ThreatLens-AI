@@ -58,6 +58,7 @@ export default function MainLayout() {
         >
           <div className="d-flex align-items-center gap-5">
             <Link to="/" className="d-flex align-items-center gap-2 text-decoration-none">
+              <img src="/logo.png" alt="ThreatLens AI" style={{ width: 28, height: 28, objectFit: 'contain' }} />
               <span style={{ fontWeight: 800, fontSize: '1.2rem', color: 'var(--tl-text-primary)', letterSpacing: '-0.02em' }}>
                 Threat<span className="text-gradient">Lens</span> AI
               </span>

@@ -124,6 +124,7 @@ export default function DashboardLayout() {
                 className="d-flex align-items-center gap-2"
                 style={{ overflow: 'hidden', whiteSpace: 'nowrap' }}
               >
+                <img src="/logo.png" alt="ThreatLens AI" style={{ width: 24, height: 24, objectFit: 'contain' }} />
                 <span style={{ fontWeight: 700, fontSize: '1rem', color: 'var(--tl-text-primary)' }}>
                   Threat<span className="text-gradient">Lens</span>
                 </span>
