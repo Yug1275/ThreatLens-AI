@@ -427,7 +427,43 @@ a:hover { color: var(--tl-primary); }
 }
 
 /* ----------------------------------------------------------------
-   6. STAT CARDS — Intelligence metric panels
+   6. FLIP CARDS — Interactive 3D Investigation Panels
+   ---------------------------------------------------------------- */
+.tl-flip-card-container {
+  perspective: 1200px;
+  width: 100%;
+  height: 100%;
+}
+
+.tl-flip-card-inner {
+  display: grid;
+  width: 100%;
+  height: 100%;
+  transition: transform 0.7s cubic-bezier(0.4, 0, 0.2, 1);
+  transform-style: preserve-3d;
+}
+
+.tl-flip-card-container:hover .tl-flip-card-inner,
+.tl-flip-card-container:focus-within .tl-flip-card-inner,
+.tl-flip-card-container:active .tl-flip-card-inner {
+  transform: rotateY(180deg);
+}
+
+.tl-flip-card-front,
+.tl-flip-card-back {
+  grid-area: 1 / 1;
+  width: 100%;
+  height: 100%;
+  backface-visibility: hidden;
+  -webkit-backface-visibility: hidden;
+}
+
+.tl-flip-card-back {
+  transform: rotateY(180deg);
+}
+
+/* ----------------------------------------------------------------
+   7. STAT CARDS — Intelligence metric panels
    ---------------------------------------------------------------- */
 .tl-stat-card {
   position: relative;
@@ -1194,6 +1230,99 @@ a:hover { color: var(--tl-primary); }
   }
   .tl-bg-nodes::before {
     opacity: 0.15;
+  }
+}
+
+/* ----------------------------------------------------------------
+   23b. COMPREHENSIVE RESPONSIVE — Landing Page & App
+   ---------------------------------------------------------------- */
+
+/* Global: Prevent horizontal overflow at all sizes */
+html, body {
+  overflow-x: hidden;
+}
+
+/* Comparison panels — desktop border-radius */
+.tl-comparison-left {
+  border-radius: 16px 0 0 16px;
+}
+.tl-comparison-right {
+  border-radius: 0 16px 16px 0;
+}
+
+/* ── Small Laptop (max 1024px) ───────────────────────────────── */
+@media (max-width: 1024px) {
+  .tl-flip-card-container {
+    min-height: 300px;
+  }
+}
+
+/* ── Tablet (max 768px) ──────────────────────────────────────── */
+@media (max-width: 768px) {
+  /* Hero: CTA buttons full-width + stacked */
+  .tl-section-hero .tl-btn-lg {
+    width: 100%;
+    min-height: 48px;
+    justify-content: center;
+  }
+
+  /* Flip cards: shorter on tablet */
+  .tl-flip-card-container {
+    min-height: 260px;
+  }
+
+  /* Comparison panels: full border-radius when stacked */
+  .tl-comparison-left {
+    border-radius: 16px 16px 0 0;
+  }
+  .tl-comparison-right {
+    border-radius: 0 0 16px 16px;
+  }
+
+  /* AI Analysis Modal: full-width on tablet */
+  .tl-ai-modal {
+    max-width: 100% !important;
+    width: 100% !important;
+    max-height: 100vh !important;
+    border-radius: 0 !important;
+    margin: 0 !important;
+  }
+  .tl-modal-backdrop {
+    padding: 0 !important;
+    align-items: stretch !important;
+  }
+}
+
+/* ── Mobile (max 480px) ──────────────────────────────────────── */
+@media (max-width: 480px) {
+  /* Flip cards: single column, shorter */
+  .tl-flip-card-container {
+    min-height: 240px;
+  }
+
+  /* Auth card: tighter padding */
+  .tl-auth-card {
+    padding: 1.5rem !important;
+    margin: 0 0.5rem;
+  }
+  .tl-auth-container {
+    padding: 1rem !important;
+  }
+
+  /* Navbar: tighter padding */
+  header nav {
+    padding: 0.5rem 0.75rem !important;
+  }
+
+  /* Footer columns: full width stacking */
+  footer .col-6 {
+    flex: 0 0 100%;
+    max-width: 100%;
+  }
+
+  /* General: All buttons min 44px touch target */
+  .tl-btn, button {
+    min-height: 44px;
   }
 }
 

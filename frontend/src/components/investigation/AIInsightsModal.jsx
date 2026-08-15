@@ -132,7 +132,7 @@ const AIInsightsModal = ({ isOpen, onClose, aiAnalysis, investigationId, investi
           initial={{ opacity: 0, scale: 0.95, y: 20 }} animate={{ opacity: 1, scale: 1, y: 0 }}
           exit={{ opacity: 0, scale: 0.95, y: 20 }} transition={{ duration: 0.3 }}
           onClick={e => e.stopPropagation()}
-          className="tl-card"
+          className="tl-card tl-ai-modal"
           style={{
             maxWidth: 900, width: '100%', maxHeight: '85vh', overflow: 'hidden',
             borderLeft: `3px solid ${riskStyle.color}`,
