@@ -124,7 +124,7 @@ export default function Dashboard() {
 
   return (
     <div>
-      <div className="d-flex justify-content-between align-items-center mb-4">
+      <div className="d-flex flex-wrap justify-content-between align-items-center gap-3 mb-4">
         <div>
           <h4 style={{ fontWeight: 700, color: 'var(--tl-text-primary)', margin: 0 }}>Threat Intelligence Dashboard</h4>
           <p style={{ color: 'var(--tl-text-muted)', fontSize: '0.8125rem', margin: '0.25rem 0 0 0' }}>Global cyber threat monitoring • {user?.username || 'Analyst'}</p>

@@ -141,7 +141,7 @@ const AIInsightsModal = ({ isOpen, onClose, aiAnalysis, investigationId, investi
         >
           {/* ── Header ──────────────────────────────────────────────────────── */}
           <div
-            className="d-flex align-items-center justify-content-between p-4"
+            className="d-flex flex-wrap align-items-start justify-content-between gap-3 p-4"
             style={{ borderBottom: '1px solid var(--tl-border)', background: 'var(--tl-bg-card)', zIndex: 1 }}
           >
             <div className="d-flex align-items-center gap-3">

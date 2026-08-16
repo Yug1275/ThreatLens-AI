@@ -345,8 +345,8 @@ export default function InvestigationDetail() {
         <motion.div initial={{ opacity: 0, y: 16 }} animate={{ opacity: 1, y: 0 }}>
           {/* Page header */}
           <div className="tl-card p-4 mb-4" style={{ borderLeft: inv.is_archived ? '4px solid var(--tl-text-muted)' : '4px solid transparent' }}>
-            <div className="d-flex justify-content-between align-items-start">
-              <div className="d-flex align-items-start gap-3 flex-wrap">
+            <div className="d-flex flex-wrap justify-content-between align-items-start gap-3">
+              <div className="d-flex align-items-start gap-3 flex-wrap flex-grow-1">
                 <div style={{
                   width: 48, height: 48, borderRadius: 12, flexShrink: 0,
                   background: `rgba(var(--tl-primary-rgb), 0.1)`,

@@ -93,7 +93,7 @@ export default function UrlReportView({ result }) {
   return (
     <motion.div initial={{ opacity: 0, y: 20 }} animate={{ opacity: 1, y: 0 }} transition={{ duration: 0.5 }}>
       {/* Tab bar */}
-      <div className="d-flex gap-1 mb-4" style={{ borderBottom: '1px solid var(--tl-border)' }}>
+      <div className="d-flex flex-wrap gap-1 mb-4" style={{ borderBottom: '1px solid var(--tl-border)' }}>
         {['overview', 'whois', 'ssl', 'technical', 'timeline'].map(tab => (
           <button key={tab} style={tabStyle(tab)} onClick={() => setActiveTab(tab)}>
             {tab.charAt(0).toUpperCase() + tab.slice(1)}

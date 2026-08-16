@@ -121,9 +121,9 @@ export default function UrlInvestigation() {
       {/* ── Results ── */}
       {showReport && result && (
         <div className="d-flex flex-column gap-4">
-          <div className="d-flex justify-content-between align-items-center">
+          <div className="d-flex flex-wrap justify-content-between align-items-center gap-3">
             <h5 style={{ color: 'var(--tl-text-primary)', margin: 0, fontWeight: 600 }}>Investigation Report</h5>
-            <div className="d-flex gap-2">
+            <div className="d-flex gap-2 flex-wrap">
               <Button variant="primary" size="sm" icon={<Brain size={16} />} onClick={() => setShowAIModal(true)}>
                 AI Analysis
               </Button>

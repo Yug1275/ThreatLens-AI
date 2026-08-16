@@ -252,7 +252,7 @@ export default function Reports() {
       {!loading && !error && <StatsBar stats={stats} />}
 
       {/* Filters & Export */}
-      <div className="d-flex justify-content-between align-items-center mb-4 flex-wrap gap-3">
+      <div className="d-flex flex-column flex-md-row justify-content-between align-items-md-center mb-4 gap-3">
         <motion.div initial={{ opacity: 0, x: -10 }} animate={{ opacity: 1, x: 0 }} className="d-flex gap-2 flex-wrap">
           {TYPES.map(t => (
             <button

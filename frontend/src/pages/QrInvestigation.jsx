@@ -265,9 +265,9 @@ export default function QrInvestigation() {
         {showReport && result && (
             <div className="col-12">
                 <motion.div initial={{ opacity: 0, y: 20 }} animate={{ opacity: 1, y: 0 }} transition={{ duration: 0.5 }}>
-                    <div className="d-flex justify-content-between align-items-center mb-4">
+                    <div className="d-flex flex-wrap justify-content-between align-items-center gap-3 mb-4">
                         <h5 style={{ color: 'var(--tl-text-primary)', margin: 0, fontWeight: 600 }}>Investigation Report</h5>
-                        <div className="d-flex gap-2">
+                        <div className="d-flex gap-2 flex-wrap">
                             <Button variant="primary" size="sm" icon={<Brain size={16} />} onClick={() => setShowAIModal(true)}>AI Analysis</Button>
                             <Button variant="secondary" size="sm" icon={<Download size={16} />} onClick={handleExport}>Export Report</Button>
                         </div>
