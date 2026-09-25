@@ -304,7 +304,7 @@ export default function InvestigationDetail() {
   return (
     <div className="pb-5">
       {/* Back link & Export */}
-      <div className="d-flex justify-content-between align-items-center mb-4 no-print">
+      <div className="d-flex flex-wrap justify-content-between align-items-center gap-3 mb-4 no-print">
         <button
           className="tl-btn tl-btn-ghost tl-btn-sm"
           onClick={() => navigate('/history')}
@@ -312,7 +312,7 @@ export default function InvestigationDetail() {
         >
           <ChevronLeft size={16} /> Back to History
         </button>
-        <div className="d-flex gap-2">
+        <div className="d-flex gap-2 flex-wrap">
           {inv && (
             <button className="tl-btn tl-btn-ghost tl-btn-sm" onClick={toggleFavorite} title="Toggle Favorite">
               <Star size={16} color={inv.is_favorite ? "var(--tl-warning)" : "var(--tl-text-muted)"} fill={inv.is_favorite ? "var(--tl-warning)" : "none"} />

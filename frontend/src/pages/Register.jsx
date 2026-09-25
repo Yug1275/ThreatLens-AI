@@ -4,6 +4,24 @@ import { AuthContext } from '../context/AuthContext';
 import { motion } from 'framer-motion';
 import { Eye, EyeOff, ArrowRight, Loader2 } from 'lucide-react';
 
+const InputField = ({ label, name, type = 'text', required = false, placeholder, autoComplete, value, onChange }) => (
+  <div style={{ marginBottom: '1rem' }}>
+    <label className="tl-label">
+      {label} {required && <span style={{ color: 'var(--tl-danger)' }}>*</span>}
+    </label>
+    <input
+      type={type}
+      name={name}
+      className="tl-input"
+      placeholder={placeholder}
+      value={value}
+      onChange={onChange}
+      required={required}
+      autoComplete={autoComplete}
+    />
+  </div>
+);
+
 const Register = () => {
   const [formData, setFormData] = useState({
     firstName: '', lastName: '', username: '', email: '', password: '', confirmPassword: ''
@@ -40,24 +58,6 @@ const Register = () => {
     } catch (err) { setError(err); } finally { setLoading(false); }
   };
 
-  const InputField = ({ label, name, type = 'text', required = false, placeholder, autoComplete }) => (
-    <div style={{ marginBottom: '1rem' }}>
-      <label className="tl-label">
-        {label} {required && <span style={{ color: 'var(--tl-danger)' }}>*</span>}
-      </label>
-      <input
-        type={type}
-        name={name}
-        className="tl-input"
-        placeholder={placeholder}
-        value={formData[name]}
-        onChange={handleChange}
-        required={required}
-        autoComplete={autoComplete}
-      />
-    </div>
-  );
-
   return (
     <div className="tl-auth-container">
       <motion.div 
@@ -91,15 +91,46 @@ const Register = () => {
           <form onSubmit={handleSubmit}>
             <div className="row g-3">
               <div className="col-6">
-                <InputField label="First Name" name="firstName" placeholder="John" autoComplete="given-name" />
+                <InputField 
+                  label="First Name" 
+                  name="firstName" 
+                  placeholder="John" 
+                  autoComplete="given-name" 
+                  value={formData.firstName}
+                  onChange={handleChange}
+                />
               </div>
               <div className="col-6">
-                <InputField label="Last Name" name="lastName" placeholder="Doe" autoComplete="family-name" />
+                <InputField 
+                  label="Last Name" 
+                  name="lastName" 
+                  placeholder="Doe" 
+                  autoComplete="family-name" 
+                  value={formData.lastName}
+                  onChange={handleChange}
+                />
               </div>
             </div>
 
-            <InputField label="Username" name="username" required placeholder="johndoe" autoComplete="username" />
-            <InputField label="Email Address" name="email" type="email" required placeholder="john@company.com" autoComplete="email" />
+            <InputField 
+              label="Username" 
+              name="username" 
+              required 
+              placeholder="johndoe" 
+              autoComplete="username" 
+              value={formData.username}
+              onChange={handleChange}
+            />
+            <InputField 
+              label="Email Address" 
+              name="email" 
+              type="email" 
+              required 
+              placeholder="john@company.com" 
+              autoComplete="email" 
+              value={formData.email}
+              onChange={handleChange}
+            />
 
             <div style={{ marginBottom: '1rem' }}>
               <label className="tl-label">Password <span style={{ color: 'var(--tl-danger)' }}>*</span></label>
