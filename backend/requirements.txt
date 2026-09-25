@@ -2,7 +2,9 @@ fastapi
 uvicorn
 sqlalchemy
 pydantic
+psycopg[binary]
 psycopg2-binary
+cloudinary
 python-dotenv
 python-multipart
 python-jose[cryptography]
